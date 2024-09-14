@@ -1,332 +1,140 @@
 # ChatApp Vercel-D
 
-Welcome to **ChatApp Vercel-D**, a chat application designed to replicate the AI21 Studio chat interface. This project includes both frontend and backend applications built with **Next.js** and **TypeScript**, managed within a monorepo using **Turborepo**. The application integrates with external services such as the **Azure OpenAI Service** for AI-generated responses, **Pusher** for real-time communication, and **MongoDB Atlas** for data storage.
+## Project Overview
 
-## Table of Contents
+ChatApp Vercel-D is a full-stack chat application built with Next.js, utilizing a monorepo structure managed by Turborepo. The application consists of a frontend for user interactions and a backend for handling API requests and database operations.
 
-- [Features](#features)
-- [Architecture](#architecture)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation](#installation)
-  - [Environment Variables](#environment-variables)
-  - [Running the Applications](#running-the-applications)
-- [Project Structure](#project-structure)
-- [Usage](#usage)
-- [External Services Integration](#external-services-integration)
-- [Deployment](#deployment)
-- [Advanced Development](#advanced-development)
-- [Contributing](#contributing)
-- [License](#license)
-
----
-
-## Features
-
-- **Interactive Chat Interface**: Real-time messaging with AI assistant responses.
-- **Few-Shot Learning**: Add few-shot examples to influence the AI assistant.
-- **File Upload and Analysis**: Upload files for content analysis by the AI assistant.
-- **Conversation History**: View and load past conversations.
-- **Search Functionality**: Search through conversations.
-- **Responsive Design**: Optimized for both desktop and mobile devices.
-
----
-
-## Architecture
-
-The project uses a monorepo structure managed by **Turborepo**, containing both frontend and backend applications.
-
-### Monorepo Structure
+## Repository Structure
 
 ```
 chatapp-vercel-d/
 ├── apps/
-│   ├── frontend/
-│   └── backend/
-├── packages/ (optional shared code)
-├── .gitignore
+│   ├── backend/
+│   │   ├── pages/
+│   │   │   └── api/
+│   │   ├── types/
+│   │   ├── utility/
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   └── BACKEND.md
+│   └── frontend/
+│       ├── src/
+│       │   ├── components/
+│       │   ├── pages/
+│       │   └── utilities/
+│       ├── package.json
+│       ├── tsconfig.json
+│       └── FRONTEND.md
 ├── package.json
-├── turbo.json
+├── tsconfig.json
+└── turbo.json
 ```
 
-- **`apps/frontend/`**: Frontend Next.js application.
-- **`apps/backend/`**: Backend Next.js application with API routes.
-- **`packages/`**: (Optional) Shared libraries or utilities.
+## Documentation
 
----
+- For detailed frontend documentation, please refer to [FRONTEND.md](apps/frontend/FRONTEND.md)
+- For detailed backend documentation, please refer to [BACKEND.md](apps/backend/BACKEND.md)
 
-## Getting Started
+## Setup Instructions
 
-### Prerequisites
-
-- **Node.js**: Version 14.17.0 or higher.
-- **npm**: Package manager.
-- **Git**: Version control system.
-- **MongoDB Atlas Account**: For database storage.
-- **Azure OpenAI Service Access**: For AI-generated responses.
-- **Pusher Account**: For real-time communication.
-- **Vercel Account**: For deployment (optional).
-
-### Installation
-
-1. **Clone the Repository**:
-
-   ```bash
-   git clone https://github.com/henryperkins/chatapp-vercel-d.git
+1. Clone the repository:
+   ```
+   git clone [repository-url]
    cd chatapp-vercel-d
    ```
 
-2. **Install Dependencies**:
-
-   ```bash
+2. Install dependencies:
+   ```
    npm install
    ```
 
-   This command installs dependencies for both frontend and backend applications due to the monorepo setup.
+3. Set up environment variables:
+   - Create a `.env.local` file in both `apps/frontend` and `apps/backend` directories.
+   - Add necessary environment variables (see Environment Variables section below).
 
-### Environment Variables
-
-Create `.env.local` files for both frontend and backend applications with the required environment variables.
-
-#### Frontend (`apps/frontend/.env.local`):
-
-```env
-NEXT_PUBLIC_API_BASE_URL=http://localhost:4000
-NEXT_PUBLIC_PUSHER_KEY=your_pusher_key
-NEXT_PUBLIC_PUSHER_CLUSTER=your_pusher_cluster
-```
-
-#### Backend (`apps/backend/.env.local`):
-
-```env
-AZURE_API_URL=your_azure_api_url
-API_KEY=your_azure_api_key
-MONGODB_URI=your_mongodb_uri
-JWT_SECRET=your_jwt_secret
-PUSHER_APP_ID=your_pusher_app_id
-PUSHER_KEY=your_pusher_key
-PUSHER_SECRET=your_pusher_secret
-PUSHER_CLUSTER=your_pusher_cluster
-MAX_TOKENS=128000
-REPLY_TOKENS=800
-CHUNK_SIZE_TOKENS=1000
-MAX_FILE_SIZE_MB=5.0
-ALLOWED_EXTENSIONS=txt,md,json
-ALLOWED_ORIGINS=http://localhost:3000
-```
-
-> **Important**: Do not commit `.env.local` files or any credentials to version control. Ensure these variables are also set in your deployment environment.
-
-### Running the Applications
-
-1. **Start the Backend Application**:
-
-   ```bash
-   cd apps/backend
+4. Run the development server:
+   ```
    npm run dev
    ```
 
-   The backend server runs on `http://localhost:4000`.
+## Quick Overview
 
-2. **Start the Frontend Application**:
+### Frontend
 
-   Open a new terminal:
+- **Technologies**: Next.js 13.5.2, React 18.2.0, TypeScript, Pusher.js, Notyf, Font Awesome
+- **Key Components**: Chat, ConversationList, FewShotForm, FileUploadForm, SearchForm
+- **Utilities**: config.js, fetchWithAuth.ts
 
-   ```bash
-   cd apps/frontend
+For more details, see [FRONTEND.md](apps/frontend/FRONTEND.md).
+
+### Backend
+
+- **Technologies**: Next.js 13.5.2 (API Routes), MongoDB, Pusher, JSON Web Tokens (JWT)
+- **Key API Endpoints**: add_few_shot_example, get_config, list_conversations, send_message, etc.
+- **Utilities**: auth.ts, azure.ts, helpers.ts, mongodb.ts, pusher.ts
+
+For more details, see [BACKEND.md](apps/backend/BACKEND.md).
+
+## Development Workflow
+
+1. Start the development servers:
+   ```
    npm run dev
    ```
+   This will start both frontend and backend servers concurrently.
 
-   The frontend application runs on `http://localhost:3000`.
+2. Frontend development:
+   - Work on components in `apps/frontend/src/components/`
+   - Update pages in `apps/frontend/src/pages/`
+   - Add new utilities in `apps/frontend/src/utilities/`
 
----
+3. Backend development:
+   - Add or modify API routes in `apps/backend/pages/api/`
+   - Update utility functions in `apps/backend/utility/`
 
-## Project Structure
+4. Run linters:
+   ```
+   npm run lint
+   ```
 
-### Frontend Application (`apps/frontend/`)
-
-- **Framework**: Next.js (React and TypeScript)
-- **Main Components**:
-  - `Chat.tsx`: Main chat interface.
-  - `FewShotForm.tsx`: Form for adding few-shot examples.
-  - `FileUploadForm.tsx`: Component for uploading files for analysis.
-  - `ConversationList.tsx`: Displays conversation history.
-  - `SearchForm.tsx`: Search functionality.
-- **Utilities**:
-  - `fetchWithAuth.ts`: Handles authenticated API requests.
-  - `config.ts`: Configuration constants.
-
-### Backend Application (`apps/backend/`)
-
-- **Framework**: Next.js API Routes (TypeScript)
-- **Key API Routes**:
-  - `/api/start_conversation`: Initiates a new conversation.
-  - `/api/send_message`: Handles message sending and AI response retrieval.
-  - `/api/reset_conversation`: Resets the current conversation.
-  - `/api/list_conversations`: Lists user's conversations.
-  - `/api/load_conversation/[conversation_id]`: Loads a specific conversation.
-  - `/api/add_few_shot_example`: Adds few-shot examples.
-  - `/api/upload_file`: Handles file uploads.
-  - `/api/search_conversations`: Searches through conversations.
-- **Utilities**:
-  - `auth.ts`: JWT-based authentication.
-  - `mongodb.ts`: MongoDB connection management.
-  - `azure.ts`: Azure OpenAI API integration.
-  - `helpers.ts`: Helper functions.
-  - `pusher.ts`: Pusher configuration.
-
----
-
-## Usage
-
-1. **Start a New Conversation**: Click the "New Conversation" button to begin chatting with the AI assistant.
-
-2. **Send Messages**: Type your message in the input field and press Enter or click the send button.
-
-3. **Add Few-Shot Examples**: Use the Few-Shot Form to add examples that influence the assistant's responses.
-
-4. **Upload Files**: Upload text files for the assistant to analyze and discuss.
-
-5. **View Conversation History**: Access previous conversations from the sidebar and reload them.
-
-6. **Search Conversations**: Use the search form to find specific conversations based on keywords.
-
----
-
-## External Services Integration
-
-### Azure OpenAI Service
-
-- **Usage**: Provides AI-generated responses to user messages and analyzes uploaded files.
-- **Setup**:
-  - Obtain your API endpoint and key from the Azure portal.
-  - Set `AZURE_API_URL` and `API_KEY` in your backend `.env.local`.
-
-### Pusher
-
-- **Usage**: Enables real-time communication between the frontend and backend.
-- **Setup**:
-  - Create a Pusher app and obtain your credentials.
-  - Set `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, and `PUSHER_CLUSTER` in your backend `.env.local`.
-  - Set `NEXT_PUBLIC_PUSHER_KEY` and `NEXT_PUBLIC_PUSHER_CLUSTER` in your frontend `.env.local`.
-
-### MongoDB Atlas
-
-- **Usage**: Stores conversations, messages, and user data.
-- **Setup**:
-  - Create a MongoDB Atlas cluster.
-  - Set `MONGODB_URI` in your backend `.env.local` with your connection string.
-
----
+5. Run tests:
+   ```
+   npm run test
+   ```
 
 ## Deployment
 
-### Deploying to Vercel
+This project is configured for deployment on Vercel.
 
-1. **Create Vercel Projects**:
+1. Push your changes to the connected Git repository.
+2. Vercel will automatically detect the pushed changes and start the deployment process.
+3. Ensure all necessary environment variables are set in the Vercel project settings.
 
-   - **Frontend**:
-     - Set the **Root Directory** to `apps/frontend`.
-   - **Backend**:
-     - Set the **Root Directory** to `apps/backend`.
+## Environment Variables
 
-2. **Configure Build Settings**:
+### Frontend (.env.local in apps/frontend)
+- `NEXT_PUBLIC_API_URL`: URL of the backend API
+- `NEXT_PUBLIC_PUSHER_KEY`: Pusher public key
+- `NEXT_PUBLIC_PUSHER_CLUSTER`: Pusher cluster
 
-   - **Build Command**: `npm run build`
-   - **Output Directory**: Defaults to `.next` (no changes needed).
+### Backend (.env.local in apps/backend)
+- `MONGODB_URI`: MongoDB connection string
+- `JWT_SECRET`: Secret for JWT signing
+- `PUSHER_APP_ID`: Pusher app ID
+- `PUSHER_KEY`: Pusher key
+- `PUSHER_SECRET`: Pusher secret
+- `PUSHER_CLUSTER`: Pusher cluster
 
-3. **Set Environment Variables**:
-
-   - Add all necessary environment variables in each project's settings on Vercel.
-
-4. **Deploy**:
-
-   - Push your code to the main branch; Vercel will automatically build and deploy.
-
-### Environment Variables in Production
-
-Ensure that all environment variables used in development are also set in your production environment on Vercel, with appropriate values.
-
----
-
-## Advanced Development
-
-### Implementing User Authentication
-
-- **Objective**: Add user registration and login for personalized experiences.
-- **Steps**:
-  - **Frontend**: Create `/login` and `/register` pages.
-  - **Backend**: Implement `/api/auth/register` and `/api/auth/login` routes.
-  - **Security**: Use `bcrypt` for password hashing and JWT for tokens.
-
-### Enhancing Real-Time Features
-
-- **Ideas**:
-  - **Typing Indicators**: Show when the assistant is typing.
-  - **Presence Indicators**: Display online status.
-- **Implementation**:
-  - Use Pusher channels and events.
-
-### AI Model Improvements
-
-- **Context Preservation**: Maintain conversation context over longer periods.
-- **Custom Models**: Fine-tune AI models with domain-specific data.
-- **Response Quality**: Adjust model parameters for better responses.
-
-### Adding New Features
-
-- **Group Chats**: Enable multiple users in a conversation.
-- **Media Support**: Allow sending images or files within the chat.
-- **Conversation Export**: Let users export conversations.
-
----
+Note: Ensure these environment variables are also set in your Vercel project settings for production deployment.
 
 ## Contributing
 
-Contributions are welcome! Please follow these steps:
-
-1. **Fork the Repository**: Click the "Fork" button at the top right of the repository page.
-
-2. **Clone Your Fork**:
-
-   ```bash
-   git clone https://github.com/yourusername/chatapp-vercel-d.git
-   ```
-
-3. **Create a Feature Branch**:
-
-   ```bash
-   git checkout -b feature/YourFeatureName
-   ```
-
-4. **Make Changes**: Implement your feature or fix.
-
-5. **Commit Changes**:
-
-   ```bash
-   git commit -m "Description of your changes"
-   ```
-
-6. **Push to Your Fork**:
-
-   ```bash
-   git push origin feature/YourFeatureName
-   ```
-
-7. **Create a Pull Request**: Go to the original repository and click "Compare & pull request."
-
----
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## License
 
-This project is licensed under the [MIT License](LICENSE).
-
----
-
-**Note**: Remember to keep your API keys and secrets secure. Do not share them publicly or commit them to version control. Use environment variables to manage sensitive information.
-
----
-
-If you have any questions or need assistance, please feel free to open an issue or reach out.
-
-Happy coding!
+This project is licensed under the MIT License.
