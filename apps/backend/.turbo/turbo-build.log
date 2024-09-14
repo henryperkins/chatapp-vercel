@@ -1,0 +1,26 @@
+
+> backend@1.0.0 build
+> next build
+
+Attention: Next.js now collects completely anonymous telemetry regarding usage.
+This information is used to shape Next.js' roadmap and prioritize features.
+You can learn more, including how to opt-out if you'd not like to participate in this anonymous program, by visiting the following URL:
+https://nextjs.org/telemetry
+
+   Linting and checking validity of types...
+Failed to compile.
+
+./pages/api/login.ts:12:47
+Type error: Expected 2 arguments, but got 3.
+
+[0m [90m 10 | [39m[36mexport[39m [36mdefault[39m [36masync[39m [36mfunction[39m handler(req[33m:[39m [33mNextApiRequest[39m[33m,[39m res[33m:[39m [33mNextApiResponse[39m) {[0m
+[0m [90m 11 | [39m  [90m// If user is already authenticated, deny access to login[39m[0m
+[0m[31m[1m>[22m[39m[90m 12 | [39m  [36mconst[39m existingUser [33m=[39m authenticate(req[33m,[39m res[33m,[39m [36mfalse[39m)[33m;[39m[0m
+[0m [90m    | [39m                                              [31m[1m^[22m[39m[0m
+[0m [90m 13 | [39m  [36mif[39m (existingUser) {[0m
+[0m [90m 14 | [39m    [36mreturn[39m res[33m.[39mstatus([35m403[39m)[33m.[39mjson({ message[33m:[39m [32m'Already authenticated.'[39m })[33m;[39m[0m
+[0m [90m 15 | [39m  }[0m
+npm ERR! Lifecycle script `build` failed with error: 
+npm ERR! Error: command failed 
+npm ERR!   in workspace: backend@1.0.0 
+npm ERR!   at location: /workspaces/chatapp-vercel-d/apps/backend 
