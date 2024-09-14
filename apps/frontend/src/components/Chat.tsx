@@ -8,39 +8,33 @@ import './Chat.css';
 import fetchWithAuth from '../utils/fetchWithAuth';
 import { API_BASE_URL } from '../utils/config';
 import { getUser } from '../utils/auth';
-import { Conversation, Message } from '@/types/models';
-
-// Import Font Awesome components and icons
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faPlus, faRedo, faPaperPlane, faHistory } from '@fortawesome/free-solid-svg-icons';
+import ConversationList from './ConversationList';
+
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 const notyf = new Notyf();
 
 const Chat: React.FC = () => {
-  const [conversationId, setConversationId] = useState<string>('');
   const [messages, setMessages] = useState<Message[]>([]);
-  const [userMessage, setUserMessage] = useState<string>('');
-  const [isSidebarOpen, setIsSidebarOpen] = useState<boolean>(false);
-  const [isTyping, setIsTyping] = useState<boolean>(false);
-
+  const [userMessage, setUserMessage] = useState('');
+  const [conversationId, setConversationId] = useState<string>('');
+  const [isTyping, setIsTyping] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const chatHistoryRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    // Initialize a new conversation on component mount
+    // Initialize conversation on component mount
     startNewConversation();
   }, []);
 
   useEffect(() => {
-    // Scroll to the bottom when messages update
-    if (chatHistoryRef.current) {
-      chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
-    }
-  }, [messages, isTyping]);
-
-  useEffect(() => {
-    if (!conversationId) return;
-
-    // Set up Pusher for real-time updates
+    // Setup Pusher for real-time updates
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
     });
@@ -59,37 +53,15 @@ const Chat: React.FC = () => {
     };
   }, [conversationId]);
 
+  useEffect(() => {
+    // Scroll to the bottom when messages update
+    if (chatHistoryRef.current) {
+      chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
+    }
+  }, [messages, isTyping]);
+
   const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  const listConversations = () => {
-    toggleSidebar();
-  };
-
-  const startNewConversation = async () => {
-    try {
-      const data = await fetchWithAuth('/api/start_conversation', { method: 'POST' });
-      setConversationId(data.conversation_id);
-      setMessages([]);
-      notyf.success('Started a new conversation.');
-      setIsSidebarOpen(false); // Close the sidebar if open
-    } catch (error: any) {
-      notyf.error(error.message || 'Failed to start a new conversation.');
-    }
-  };
-
-  const resetConversation = async () => {
-    try {
-      await fetchWithAuth('/api/reset_conversation', {
-        method: 'POST',
-        body: JSON.stringify({ conversation_id: conversationId }),
-      });
-      setMessages([]);
-      notyf.success('Conversation reset.');
-    } catch (error: any) {
-      notyf.error(error.message || 'Failed to reset conversation.');
-    }
+    setIsSidebarOpen((prev) => !prev);
   };
 
   const sendMessage = async () => {
@@ -112,6 +84,44 @@ const Chat: React.FC = () => {
     }
   };
 
+  const startNewConversation = async () => {
+    try {
+      const data = await fetchWithAuth('/api/start_conversation', { method: 'POST' });
+      setConversationId(data.conversation_id);
+      setMessages([]);
+      notyf.success('Started a new conversation.');
+      setIsSidebarOpen(false);
+    } catch (error: any) {
+      notyf.error(error.message || 'Failed to start a new conversation.');
+    }
+  };
+
+  const resetConversation = async () => {
+    try {
+      await fetchWithAuth('/api/reset_conversation', {
+        method: 'POST',
+        body: JSON.stringify({ conversation_id: conversationId }),
+      });
+      setMessages([]);
+      notyf.success('Conversation reset.');
+    } catch (error: any) {
+      notyf.error(error.message || 'Failed to reset conversation.');
+    }
+  };
+
+  // Define the loadConversation function to pass as a prop
+  const loadConversation = async (convId: string) => {
+    try {
+      const data = await fetchWithAuth(`/api/load_conversation/${convId}`, { method: 'GET' });
+      setConversationId(convId);
+      setMessages(data.conversation);
+      notyf.success('Conversation loaded.');
+      setIsSidebarOpen(false);
+    } catch (error: any) {
+      notyf.error(error.message || 'Failed to load conversation.');
+    }
+  };
+
   const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setUserMessage(e.target.value);
   };
@@ -120,18 +130,6 @@ const Chat: React.FC = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
-    }
-  };
-
-  const loadConversation = async (id: string) => {
-    try {
-      const data = await fetchWithAuth(`/api/load_conversation/${id}`, { method: 'GET' });
-      setConversationId(id);
-      setMessages(data.conversation);
-      notyf.success('Conversation loaded.');
-      setIsSidebarOpen(false);
-    } catch (error: any) {
-      notyf.error(error.message || 'Failed to load conversation.');
     }
   };
 
@@ -146,18 +144,18 @@ const Chat: React.FC = () => {
       <main className="chat-main">
         {/* Header */}
         <header className="chat-header">
-          <h1>Llama Token Chatbot</h1>
+          <h1>Chatbot</h1>
           <nav className="chat-nav">
             <button onClick={toggleSidebar} title="Toggle Conversation History" aria-label="Toggle Conversation History">
               <FontAwesomeIcon icon={faBars} />
             </button>
-            <button onClick={startNewConversation} title="New Conversation" aria-label="Start New Conversation">
+            <button onClick={startNewConversation} title="Start New Conversation" aria-label="Start New Conversation">
               <FontAwesomeIcon icon={faPlus} />
             </button>
             <button onClick={resetConversation} title="Reset Conversation" aria-label="Reset Conversation">
               <FontAwesomeIcon icon={faRedo} />
             </button>
-            <button onClick={listConversations} title="Conversation History" aria-label="Conversation History">
+            <button onClick={toggleSidebar} title="Conversation History" aria-label="Conversation History">
               <FontAwesomeIcon icon={faHistory} />
             </button>
           </nav>
