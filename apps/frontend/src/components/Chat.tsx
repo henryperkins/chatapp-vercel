@@ -1,174 +1,80 @@
+// apps/frontend/src/components/Chat.tsx
+
 import React, { useState, useEffect, useRef, ChangeEvent } from 'react';
-import Pusher from 'pusher-js';
-import { Notyf } from 'notyf';
-import 'notyf/notyf.min.css';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBars, faPlus, faRedo, faHistory, faSun, faMoon } from '@fortawesome/free-solid-svg-icons';
 import './Chat.css';
-import fetchWithAuth from '../utils/fetchWithAuth';
-import { API_BASE_URL } from '../utils/config';
-
-const notyf = new Notyf();
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
 
 const Chat: React.FC = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<{ role: string; content: string }[]>([]);
   const [userMessage, setUserMessage] = useState('');
-  const [conversationId, setConversationId] = useState<string | null>(null);
   const [isTyping, setIsTyping] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
   const chatHistoryRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    startNewConversation();
-    setupPusher();
-
-    // Auto-focus input field on component mount
     inputRef.current?.focus();
-
-    // Clean up Pusher subscriptions on unmount
-    return () => {
-      Pusher.instances.forEach((instance) => instance.disconnect());
-    };
   }, []);
 
+  const sendMessage = async () => {
+    setIsTyping(true);
+    // Simulate sending message to backend and getting response
+    const newMessages = [...messages, { role: 'user', content: userMessage }];
+    setMessages(newMessages);
+    setUserMessage('');
+    // Simulate assistant response
+    setTimeout(() => {
+      setMessages([...newMessages, { role: 'assistant', content: 'This is an AI response' }]);
+      setIsTyping(false);
+    }, 2000);
+  };
+
   useEffect(() => {
-    // Scroll to the bottom when messages update
     chatHistoryRef.current?.scrollTo({
       top: chatHistoryRef.current.scrollHeight,
       behavior: 'smooth',
     });
   }, [messages]);
 
-  const setupPusher = () => {
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
-    });
-
-    const channel = pusher.subscribe('chat-channel');
-
-    channel.bind('new-message', (data: Message & { conversation_id: string }) => {
-      if (data.conversation_id !== conversationId) return;
-
-      setMessages((prevMessages) => [...prevMessages, { role: data.role, content: data.content }]);
-
-      if (data.role === 'assistant') {
-        setIsTyping(false);
-      }
-    });
-  };
-
-  const startNewConversation = async () => {
-    try {
-      const response = await fetchWithAuth('/api/start_conversation', { method: 'POST' });
-      const data = await response.json();
-      setConversationId(data.conversation_id);
-      setMessages([]);
-      notyf.success('Started a new conversation.');
-    } catch (error: any) {
-      notyf.error(error.message || 'Failed to start a new conversation.');
-    }
-  };
-
-  const sendMessage = async () => {
-    if (!userMessage.trim()) return;
-
-    const message = userMessage.trim();
-    setMessages((prevMessages) => [...prevMessages, { role: 'user', content: message }]);
-    setUserMessage('');
-    setIsTyping(true);
-
-    try {
-      await fetchWithAuth('/api/send_message', {
-        method: 'POST',
-        body: JSON.stringify({ conversation_id: conversationId, message }),
-      });
-    } catch (error: any) {
-      notyf.error(error.message || 'Failed to send message.');
-      setIsTyping(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  const handleInput = (e: ChangeEvent<HTMLTextAreaElement>) => {
-    setUserMessage(e.target.value);
-    e.target.style.height = 'auto';
-    e.target.style.height = `${e.target.scrollHeight}px`;
-  };
-
-  const toggleSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
-  };
-
-  // Placeholder functions for navigation buttons
-  const resetConversation = async () => {
-    try {
-      await fetchWithAuth('/api/reset_conversation', {
-        method: 'POST',
-        body: JSON.stringify({ conversation_id: conversationId }),
-      });
-      setMessages([]);
-      notyf.success('Conversation reset.');
-    } catch (error: any) {
-      notyf.error(error.message || 'Failed to reset conversation.');
-    }
-  };
-
-  const listConversations = () => {
-    // Implement conversation listing logic
-    toggleSidebar();
-  };
-
-  const loadConversation = async (conversation_id: string) => {
-    try {
-      const response = await fetchWithAuth(`/api/load_conversation/${conversation_id}`, {
-        method: 'GET',
-      });
-      const data = await response.json();
-      setConversationId(conversation_id);
-      setMessages(data.conversation);
-      notyf.success('Conversation loaded.');
-    } catch (error: any) {
-      notyf.error(error.message || 'Failed to load conversation.');
-    }
-  };
+  const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
+  const toggleDarkMode = () => setIsDarkMode(!isDarkMode);
 
   return (
-    <div className={`chat-page ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-      {/* Sidebar for Conversation List */}
+    <div className={`chat-page ${isDarkMode ? 'dark-mode' : ''}`}>
+      {/* Sidebar */}
       <aside className={`conversation-sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        <ConversationList loadConversation={loadConversation} />
+        <div className="sidebar-content">
+          <h2>Conversations</h2>
+          {/* Add conversation list here */}
+        </div>
       </aside>
 
-      {/* Main Chat Area */}
-      <main className="chat-main">
+      <main className={`chat-main ${isSidebarOpen ? 'sidebar-open' : ''}`}>
         {/* Header */}
         <header className="chat-header">
           <h1>Llama Token Chatbot</h1>
           <nav className="chat-nav">
-            <button onClick={toggleSidebar} title="Toggle Conversation History" aria-label="Toggle Conversation History">
-              <i className="fas fa-bars"></i>
+            <button onClick={toggleSidebar} title="Toggle Conversation History">
+              <FontAwesomeIcon icon={faBars} />
             </button>
-            <button onClick={startNewConversation} title="New Conversation" aria-label="Start New Conversation">
-              <i className="fas fa-plus"></i>
+            <button onClick={sendMessage} title="New Conversation">
+              <FontAwesomeIcon icon={faPlus} />
             </button>
-            <button onClick={resetConversation} title="Reset Conversation" aria-label="Reset Conversation">
-              <i className="fas fa-redo"></i>
+            <button title="Reset Conversation">
+              <FontAwesomeIcon icon={faRedo} />
             </button>
-            {/* Add more buttons as needed */}
+            <button title="Conversation History">
+              <FontAwesomeIcon icon={faHistory} />
+            </button>
+            <button onClick={toggleDarkMode} title="Toggle Dark Mode">
+              {isDarkMode ? <FontAwesomeIcon icon={faSun} /> : <FontAwesomeIcon icon={faMoon} />}
+            </button>
           </nav>
         </header>
 
-        {/* Conversation Area */}
+        {/* Chat History */}
         <div className="chat-container">
           <div className="chat-history" ref={chatHistoryRef}>
             {messages.map((msg, index) => (
@@ -179,15 +85,13 @@ const Chat: React.FC = () => {
             {isTyping && (
               <div className="message assistant">
                 <div className="message-content typing-indicator">
-                  <span></span>
-                  <span></span>
-                  <span></span>
+                  <span></span><span></span><span></span>
                 </div>
               </div>
             )}
           </div>
 
-          {/* Message Input Area */}
+          {/* Message Input */}
           <div className="message-input">
             <form
               onSubmit={(e) => {
@@ -198,14 +102,23 @@ const Chat: React.FC = () => {
               <textarea
                 ref={inputRef}
                 value={userMessage}
-                onChange={handleInput}
-                onKeyDown={handleKeyDown}
+                onChange={(e: ChangeEvent<HTMLTextAreaElement>) => setUserMessage(e.target.value)}
                 placeholder="Type your message and press Enter..."
                 className="message-input-field"
                 rows={1}
+                onInput={(e) => {
+                  e.target.style.height = 'auto';
+                  e.target.style.height = `${e.target.scrollHeight}px`;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
               />
-              <button type="submit" className="send-button" aria-label="Send Message">
-                <i className="fas fa-paper-plane"></i>
+              <button type="submit" className="send-button">
+                Send
               </button>
             </form>
           </div>
