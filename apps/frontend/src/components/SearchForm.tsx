@@ -8,14 +8,19 @@ import fetchWithAuth from '../utils/fetchWithAuth';
 // Import Font Awesome components and icons
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faSearch } from '@fortawesome/free-solid-svg-icons';
-import { Conversation } from '@/types/models';
+
+interface SearchResult {
+  conversation_id: string;
+  title?: string;
+  updated_at: string;
+}
 
 const notyf = new Notyf();
 
 const SearchForm: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<Conversation[]>([]);
-  const [loading, setLoading] = useState<boolean>(false);
+  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
+  const [searching, setSearching] = useState<boolean>(false);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -25,8 +30,7 @@ const SearchForm: React.FC = () => {
       return;
     }
 
-    setLoading(true);
-    setSearchResults([]);
+    setSearching(true);
 
     try {
       const data = await fetchWithAuth('/api/search_conversations', {
@@ -38,7 +42,7 @@ const SearchForm: React.FC = () => {
     } catch (error: any) {
       notyf.error(error.message || 'Failed to perform search.');
     } finally {
-      setLoading(false);
+      setSearching(false);
     }
   };
 
@@ -51,13 +55,14 @@ const SearchForm: React.FC = () => {
           onChange={(e) => setSearchQuery(e.target.value)}
           placeholder="Search conversations..."
           aria-label="Search Conversations"
+          required
         />
         <button type="submit" className="btn-search" aria-label="Search">
           <FontAwesomeIcon icon={faSearch} />
         </button>
       </form>
 
-      {loading && <p>Searching...</p>}
+      {searching && <div className="search-loading">Searching...</div>}
 
       {searchResults.length > 0 && (
         <div className="search-results">
@@ -65,8 +70,8 @@ const SearchForm: React.FC = () => {
           <ul>
             {searchResults.map((result) => (
               <li key={result.conversation_id}>
-                <button onClick={() => window.location.href = `/?conversationId=${result.conversation_id}`}>
-                  {result.title || `Conversation ${result.conversation_id.slice(0, 8)}`}
+                <button onClick={() => window.dispatchEvent(new CustomEvent('loadConversation', { detail: result.conversation_id }))}>
+                  {result.title || 'Untitled Conversation'}
                 </button>
               </li>
             ))}

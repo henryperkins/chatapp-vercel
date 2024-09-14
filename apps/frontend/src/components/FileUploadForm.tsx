@@ -10,7 +10,7 @@ const notyf = new Notyf();
 const FileUploadForm: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
   const [analysis, setAnalysis] = useState<string>('');
-  const [loading, setLoading] = useState<boolean>(false);
+  const [uploading, setUploading] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,12 +23,16 @@ const FileUploadForm: React.FC = () => {
     const formData = new FormData();
     formData.append('file', file);
 
-    setLoading(true);
+    setUploading(true);
 
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/upload_file`, {
         method: 'POST',
         body: formData,
+        headers: {
+          // Authorization header will be handled by fetchWithAuth
+          Authorization: `Bearer ${localStorage.getItem('jwt_token') || ''}`,
+        },
       });
 
       const data = await response.json();
@@ -36,14 +40,14 @@ const FileUploadForm: React.FC = () => {
       if (response.ok) {
         setAnalysis(data.analysis);
         notyf.success('File uploaded and analyzed successfully.');
+        setFile(null);
       } else {
         notyf.error(data.message || 'Failed to upload file.');
       }
     } catch (error: any) {
       notyf.error(error.message || 'Failed to upload file.');
     } finally {
-      setLoading(false);
-      setFile(null);
+      setUploading(false);
     }
   };
 
@@ -65,15 +69,16 @@ const FileUploadForm: React.FC = () => {
             accept=".txt,.json,.md"
             onChange={handleFileChange}
             aria-label="File Input"
+            required
           />
         </div>
-        <button type="submit" className="btn btn-upload" disabled={loading}>
-          {loading ? 'Uploading...' : 'Upload File'}
+        <button type="submit" className="btn btn-upload" disabled={uploading}>
+          {uploading ? 'Uploading...' : 'Upload File'}
         </button>
       </form>
       {analysis && (
         <div className="analysis-result">
-          <h3>Analysis Result:</h3>
+          <h3>Analysis Result</h3>
           <p>{analysis}</p>
         </div>
       )}

@@ -49,6 +49,7 @@ const FewShotForm: React.FC = () => {
             onChange={(e) => setUserPrompt(e.target.value)}
             placeholder="Enter User Prompt"
             aria-label="User Prompt"
+            required
           />
         </div>
         <div className="form-group">
@@ -60,6 +61,7 @@ const FewShotForm: React.FC = () => {
             onChange={(e) => setAssistantResponse(e.target.value)}
             placeholder="Enter Assistant Response"
             aria-label="Assistant Response"
+            required
           />
         </div>
         <button type="submit" className="btn btn-add">

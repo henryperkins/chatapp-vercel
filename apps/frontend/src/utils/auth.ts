@@ -1,7 +1,11 @@
 // File: apps/frontend/src/utils/auth.ts
 
 import jwtDecode from 'jwt-decode';
-import { User } from '@/types/models';
+
+interface User {
+  id: string;
+  email: string;
+}
 
 export function saveToken(token: string) {
   localStorage.setItem('jwt_token', token);
@@ -24,7 +28,6 @@ export function getUser(): User | null {
     } catch (error) {
       console.error('Invalid token:', error);
       removeToken();
-      return null;
     }
   }
   return null;
