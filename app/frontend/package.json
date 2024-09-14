@@ -14,7 +14,10 @@
     "react": "18.2.0",
     "react-dom": "18.2.0",
     "pusher-js": "^7.0.3",
-    "notyf": "^3.10.0"
+    "notyf": "^3.10.0",
+    "@fortawesome/react-fontawesome": "^0.2.0",
+    "@fortawesome/free-solid-svg-icons": "^6.2.1",
+    "@fortawesome/fontawesome-svg-core": "^6.2.1"
     // Add other dependencies as needed
   },
   "devDependencies": {
