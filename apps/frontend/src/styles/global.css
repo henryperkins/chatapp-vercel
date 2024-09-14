@@ -1,0 +1,212 @@
+/* File: apps/frontend/src/styles/globals.css */
+
+/* Reset styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Global styles */
+body {
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  background-color: #f5f5f5;
+  color: #333333;
+}
+
+.home-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+}
+
+.side-panel {
+  width: 300px;
+  background-color: #ffffff;
+  border-left: 1px solid #e0e0e0;
+  overflow-y: auto;
+}
+
+/* Utility classes */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.btn {
+  display: inline-block;
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #007bff;
+  color: #ffffff;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn:hover {
+  background-color: #0056b3;
+}
+
+/* FewShotForm and FileUploadForm specific styles */
+.few-shot-form,
+.file-upload-form {
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  margin: 20px;
+  border-radius: 8px;
+}
+
+.few-shot-form h2,
+.file-upload-form h2 {
+  margin-bottom: 15px;
+  color: #333333;
+}
+
+.few-shot-form .form-group,
+.file-upload-form .form-group {
+  margin-bottom: 15px;
+}
+
+.few-shot-form label,
+.file-upload-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #333333;
+}
+
+.few-shot-form input,
+.file-upload-form input[type='file'] {
+  width: 100%;
+  padding: 10px 15px;
+  font-size: 16px;
+  border: 1px solid #cccccc;
+  border-radius: 5px;
+  outline: none;
+}
+
+.few-shot-form input:focus,
+.file-upload-form input[type='file']:focus {
+  border-color: #007bff;
+}
+
+.btn-add,
+.btn-upload {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  background-color: #28a745; /* Green for add/upload */
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-add:hover,
+.btn-upload:hover {
+  background-color: #218838;
+}
+
+/* SearchForm specific styles */
+.search-form {
+  padding: 15px 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.search-form form {
+  display: flex;
+  align-items: center;
+}
+
+.search-form input {
+  flex: 1;
+  padding: 10px 15px;
+  font-size: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  outline: none;
+}
+
+.search-form input:focus {
+  border-color: #007bff;
+}
+
+.btn-search {
+  margin-left: 10px;
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: #333333;
+  cursor: pointer;
+}
+
+.btn-search:hover {
+  color: #007bff;
+}
+
+.search-results {
+  padding: 20px;
+  background-color: #ffffff;
+  border-top: 1px solid #e0e0e0;
+}
+
+.search-results h3 {
+  margin-bottom: 10px;
+  color: #333333;
+}
+
+.search-results ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.search-results li {
+  margin-bottom: 10px;
+}
+
+.search-results button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+}
+
+.search-results button:hover {
+  background-color: #f0f0f0;
+}
+
+/* Analysis Result */
+.analysis-result {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+}
+
+.analysis-result h3 {
+  margin-bottom: 10px;
+  color: #333333;
+}
+
+.analysis-result p {
+  white-space: pre-wrap;
+  color: #555555;
+}

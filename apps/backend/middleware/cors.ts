@@ -1,3 +1,5 @@
+// File: apps/backend/middleware/cors.ts
+
 import { NextApiRequest, NextApiResponse } from 'next';
 import NextCors from 'nextjs-cors';
 

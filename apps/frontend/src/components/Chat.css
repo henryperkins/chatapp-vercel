@@ -1,4 +1,6 @@
-/* Reset and base styles */
+/* File: apps/frontend/src/components/Chat.css */
+
+/* Base styles */
 .chat-page {
   display: flex;
   height: 100vh;
@@ -6,13 +8,20 @@
   background-color: #f5f5f5;
 }
 
+.chat-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  transition: margin-left 0.3s ease;
+}
+
 .chat-header {
-  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 15px 20px;
   background-color: #ffffff;
   border-bottom: 1px solid #e0e0e0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .chat-header h1 {
@@ -24,19 +33,42 @@
 .chat-nav button {
   background: none;
   border: none;
-  margin-left: 10px;
+  margin-left: 15px;
   cursor: pointer;
 }
 
-.chat-nav i {
+.chat-nav svg {
   font-size: 20px;
   color: #333333;
 }
 
-.chat-nav i:hover {
+.chat-nav svg:hover {
   color: #007bff;
 }
 
+/* Sidebar styles */
+.conversation-sidebar {
+  position: fixed;
+  left: -300px;
+  top: 0;
+  width: 300px;
+  height: 100%;
+  background-color: #ffffff;
+  border-right: 1px solid #e0e0e0;
+  overflow-y: auto;
+  transition: left 0.3s ease;
+  z-index: 1000;
+}
+
+.conversation-sidebar.open {
+  left: 0;
+}
+
+.chat-main.sidebar-open {
+  margin-left: 300px;
+}
+
+/* Chat container */
 .chat-container {
   flex: 1;
   display: flex;
@@ -68,7 +100,7 @@
 }
 
 .message.user .message-content {
-  background-color: #dcf8c6;
+  background-color: #dcf8c6; /* Light green background for user messages */
   color: #000000;
   border-top-right-radius: 0;
 }
@@ -84,50 +116,11 @@
   border: 1px solid #e0e0e0;
 }
 
-.message-input {
-  padding: 15px;
-  background-color: #ffffff;
-  border-top: 1px solid #e0e0e0;
-}
-
-.message-input form {
-  display: flex;
-}
-
-.message-input-field {
-  flex: 1;
-  padding: 10px 15px;
-  font-size: 16px;
-  border: 1px solid #e0e0e0;
-  border-radius: 20px;
-  outline: none;
-  resize: none;
-  max-height: 150px;
-  overflow-y: auto;
-}
-
-.message-input-field:focus {
-  border-color: #007bff;
-}
-
-.send-button {
-  margin-left: 10px;
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #007bff;
-  color: #ffffff;
-  border: none;
-  border-radius: 25px;
-  cursor: pointer;
-}
-
-.send-button:hover {
-  background-color: #0056b3;
-}
-
+/* Typing indicator */
 .typing-indicator {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
 }
 
 .typing-indicator span {
@@ -160,36 +153,105 @@
   100% {
     opacity: 0.2;
     transform: scale(1);
+  }
 }
 
-/* Sidebar styles */
-.conversation-sidebar {
-  position: fixed;
-  left: -250px;
-  top: 0;
-  width: 250px;
-  height: 100%;
+/* Message input area */
+.message-input {
+  padding: 15px 20px;
   background-color: #ffffff;
-  border-right: 1px solid #e0e0e0;
-  overflow-y: auto;
-  transition: left 0.3s ease;
-  z-index: 1000;
+  border-top: 1px solid #e0e0e0;
 }
 
-.conversation-sidebar.open {
-  left: 0;
+.message-input form {
+  display: flex;
+  align-items: center;
 }
 
-.chat-main {
+.message-input-field {
   flex: 1;
-  transition: margin-left 0.3s ease;
+  padding: 10px 15px;
+  font-size: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 20px;
+  outline: none;
+  resize: none;
+  max-height: 150px;
+  overflow-y: auto;
 }
 
-.chat-main.sidebar-open {
-  margin-left: 250px;
+.message-input-field:focus {
+  border-color: #007bff;
 }
 
-/* Dark mode */
+.send-button {
+  margin-left: 10px;
+  padding: 10px 15px;
+  font-size: 16px;
+  background-color: #007bff; /* Blue button color */
+  color: #ffffff;
+  border: none;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.send-button svg {
+  font-size: 18px;
+}
+
+.send-button:hover {
+  background-color: #0056b3;
+}
+
+/* Scrollbar styling */
+.chat-history::-webkit-scrollbar {
+  width: 8px;
+}
+
+.chat-history::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.chat-history::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.chat-history::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .message-content {
+    max-width: 80%;
+    font-size: 14px;
+  }
+
+  .message-input-field {
+    font-size: 14px;
+  }
+
+  .send-button {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+
+  .conversation-sidebar {
+    width: 250px;
+    left: -250px;
+  }
+
+  .conversation-sidebar.open {
+    left: 0;
+  }
+
+  .chat-main.sidebar-open {
+    margin-left: 250px;
+  }
+}
+
+/* Dark mode styles */
 .chat-page.dark-mode {
   background-color: #2c2c2c;
   color: #ffffff;

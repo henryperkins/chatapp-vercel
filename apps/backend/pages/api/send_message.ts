@@ -5,6 +5,7 @@ import { authenticate } from '@/utils/auth';
 import clientPromise from '@/utils/mongodb';
 import { getAzureResponse } from '@/utils/azure';
 import { PusherInstance } from '@/utils/pusher';
+import { Message } from '@/types/models';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   const user = authenticate(req, res);
@@ -37,35 +38,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     // Add user's message to the conversation
+    const userMessage: Message = { role: 'user', content: message };
     await conversations.updateOne(
       { conversation_id },
       {
         $push: {
-          messages: { role: 'user', content: message },
+          messages: userMessage,
         },
         $set: { updated_at: new Date() },
       }
     );
 
     // Get assistant's response from Azure OpenAI API
-    const assistantResponse = await getAzureResponse([...conversation.messages, { role: 'user', content: message }]);
+    const assistantResponse = await getAzureResponse([...conversation.messages, userMessage]);
 
     // Add assistant's response to the conversation
+    const assistantMessage: Message = { role: 'assistant', content: assistantResponse };
     await conversations.updateOne(
       { conversation_id },
       {
         $push: {
-          messages: { role: 'assistant', content: assistantResponse },
+          messages: assistantMessage,
         },
         $set: { updated_at: new Date() },
       }
     );
 
-    // Emit the messages via Pusher
+    // Emit the assistant's message via Pusher
     PusherInstance.trigger('chat-channel', 'new-message', {
       conversation_id,
-      role: 'assistant',
-      content: assistantResponse,
+      role: assistantMessage.role,
+      content: assistantMessage.content,
     });
 
     res.status(200).json({ message: 'Message sent successfully.' });

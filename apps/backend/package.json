@@ -12,6 +12,7 @@
   "dependencies": {
     "@types/node": "^18.11.9",
     "axios": "^0.27.2",
+    "bcrypt": "^5.1.0",
     "dotenv": "^16.0.3",
     "formidable": "^2.0.1",
     "gpt-3-encoder": "^1.1.4",
@@ -19,9 +20,11 @@
     "mongodb": "^4.12.1",
     "next": "13.5.2",
     "nextjs-cors": "^2.0.6",
-    "pusher": "^5.0.3"
+    "pusher": "^5.0.3",
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
+    "@types/bcrypt": "^5.0.0",
     "@types/formidable": "^2.0.5",
     "@types/jest": "^29.2.3",
     "@types/jsonwebtoken": "^9.0.1",

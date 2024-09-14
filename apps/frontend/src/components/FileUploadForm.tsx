@@ -1,3 +1,5 @@
+// File: apps/frontend/src/components/FileUploadForm.tsx
+
 import React, { useState } from 'react';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
@@ -7,6 +9,8 @@ const notyf = new Notyf();
 
 const FileUploadForm: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);
+  const [analysis, setAnalysis] = useState<string>('');
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,22 +23,27 @@ const FileUploadForm: React.FC = () => {
     const formData = new FormData();
     formData.append('file', file);
 
+    setLoading(true);
+
     try {
-      const response = await fetchWithAuth('/api/upload_file', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/upload_file`, {
         method: 'POST',
         body: formData,
       });
 
+      const data = await response.json();
+
       if (response.ok) {
+        setAnalysis(data.analysis);
         notyf.success('File uploaded and analyzed successfully.');
-        setFile(null);
-        // Handle response data as needed
       } else {
-        const errorData = await response.json();
-        notyf.error(errorData.message || 'Failed to upload file.');
+        notyf.error(data.message || 'Failed to upload file.');
       }
     } catch (error: any) {
       notyf.error(error.message || 'Failed to upload file.');
+    } finally {
+      setLoading(false);
+      setFile(null);
     }
   };
 
@@ -58,10 +67,16 @@ const FileUploadForm: React.FC = () => {
             aria-label="File Input"
           />
         </div>
-        <button type="submit" className="btn btn-upload">
-          Upload File
+        <button type="submit" className="btn btn-upload" disabled={loading}>
+          {loading ? 'Uploading...' : 'Upload File'}
         </button>
       </form>
+      {analysis && (
+        <div className="analysis-result">
+          <h3>Analysis Result:</h3>
+          <p>{analysis}</p>
+        </div>
+      )}
     </section>
   );
 };

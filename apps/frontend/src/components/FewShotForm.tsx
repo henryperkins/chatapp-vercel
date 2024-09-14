@@ -1,3 +1,5 @@
+// File: apps/frontend/src/components/FewShotForm.tsx
+
 import React, { useState } from 'react';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
@@ -18,7 +20,7 @@ const FewShotForm: React.FC = () => {
     }
 
     try {
-      const response = await fetchWithAuth('/api/add_few_shot_example', {
+      await fetchWithAuth('/api/add_few_shot_example', {
         method: 'POST',
         body: JSON.stringify({
           user_prompt: userPrompt.trim(),
@@ -26,14 +28,9 @@ const FewShotForm: React.FC = () => {
         }),
       });
 
-      if (response.ok) {
-        notyf.success('Few-shot example added successfully.');
-        setUserPrompt('');
-        setAssistantResponse('');
-      } else {
-        const errorData = await response.json();
-        notyf.error(errorData.message || 'Failed to add few-shot example.');
-      }
+      notyf.success('Few-shot example added successfully.');
+      setUserPrompt('');
+      setAssistantResponse('');
     } catch (error: any) {
       notyf.error(error.message || 'Failed to add few-shot example.');
     }
