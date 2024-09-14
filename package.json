@@ -1,0 +1,19 @@
+{
+  "name": "chatapp-vercel-d",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "start": "turbo run start",
+    "lint": "turbo run lint",
+    "test": "turbo run test"
+  },
+  "workspaces": ["apps/*", "packages/*"],
+  "devDependencies": {
+    "turbo": "^1.10.12"
+  },
+  "engines": {
+    "node": ">=14.17.0"
+  }
+}
