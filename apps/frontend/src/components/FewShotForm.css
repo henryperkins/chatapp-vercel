@@ -1,0 +1,48 @@
+/* Few-Shot Form styles */
+.few-shot-form {
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  margin: 20px 0;
+}
+
+.few-shot-form h2 {
+  margin-top: 0;
+}
+
+.few-shot-form .form-group {
+  margin-bottom: 15px;
+}
+
+.few-shot-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.few-shot-form input {
+  width: 100%;
+  padding: 10px;
+  font-size: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  outline: none;
+}
+
+.few-shot-form input:focus {
+  border-color: #007bff;
+}
+
+.few-shot-form .btn-add {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #007bff;
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.few-shot-form .btn-add:hover {
+  background-color: #0056b3;
+}

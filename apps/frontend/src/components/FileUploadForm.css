@@ -1,0 +1,39 @@
+/* File Upload Form styles */
+.file-upload-form {
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  margin: 20px 0;
+}
+
+.file-upload-form h2 {
+  margin-top: 0;
+}
+
+.file-upload-form .form-group {
+  margin-bottom: 15px;
+}
+
+.file-upload-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+}
+
+.file-upload-form input[type='file'] {
+  font-size: 16px;
+}
+
+.file-upload-form .btn-upload {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #007bff;
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.file-upload-form .btn-upload:hover {
+  background-color: #0056b3;
+}

@@ -1,0 +1,34 @@
+/* Conversation List styles */
+.conversation-list {
+  padding: 20px;
+}
+
+.conversation-list h2 {
+  margin-top: 0;
+}
+
+.conversation-list ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.conversation-list li {
+  margin-bottom: 10px;
+}
+
+.conversation-list button {
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 10px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.2s;
+}
+
+.conversation-list button:hover {
+  background-color: #f0f0f0;
+}
