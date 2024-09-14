@@ -28,7 +28,6 @@
     "jest": "^29.2.1",
     "babel-jest": "^29.2.1",
     "@testing-library/react": "^13.4.0"
-    // Add other dev dependencies as needed
   },
   "engines": {
     "node": ">=14.17.0"
