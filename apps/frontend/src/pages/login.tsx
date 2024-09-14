@@ -5,13 +5,14 @@ import { useRouter } from 'next/router';
 import { saveToken } from '../utils/auth';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
-import '../styles/login.css';
+import './login.css'; // Import styles specific to the login page
 
 const notyf = new Notyf();
 
 const LoginPage: React.FC = () => {
-  const [email, setEmail] = useState<string>('');
-  const [password, setPassword] = useState<string>('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState<boolean>(false);
   const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -22,13 +23,15 @@ const LoginPage: React.FC = () => {
       return;
     }
 
+    setLoading(true);
+
     try {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: email.trim(), password: password.trim() })
+        body: JSON.stringify({ email: email.trim(), password: password.trim() }),
       });
 
       const data = await response.json();
@@ -41,14 +44,15 @@ const LoginPage: React.FC = () => {
         notyf.error(data.message || 'Login failed.');
       }
     } catch (error: any) {
-      console.error('Login error:', error);
-      notyf.error('An error occurred during login.');
+      notyf.error(error.message || 'Login failed.');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <div className="login-page">
-      <form onSubmit={handleLogin} className="login-form">
+      <form className="login-form" onSubmit={handleLogin}>
         <h1>Login</h1>
         <div className="form-group">
           <label htmlFor="email">Email:</label>
@@ -74,8 +78,8 @@ const LoginPage: React.FC = () => {
             required
           />
         </div>
-        <button type="submit" className="btn btn-login">
-          Login
+        <button type="submit" className="btn btn-login" disabled={loading}>
+          {loading ? 'Logging in...' : 'Login'}
         </button>
       </form>
     </div>
