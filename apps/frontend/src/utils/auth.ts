@@ -7,7 +7,7 @@ interface User {
   email: string;
 }
 
-export function saveToken(token: string) {
+export function saveToken(token: string): void {
   localStorage.setItem('jwt_token', token);
 }
 
@@ -15,7 +15,7 @@ export function getToken(): string | null {
   return localStorage.getItem('jwt_token');
 }
 
-export function removeToken() {
+export function removeToken(): void {
   localStorage.removeItem('jwt_token');
 }
 

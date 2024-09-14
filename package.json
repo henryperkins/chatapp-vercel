@@ -9,11 +9,20 @@
     "lint": "turbo run lint",
     "test": "turbo run test"
   },
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "devDependencies": {
     "turbo": "^1.10.12"
   },
   "engines": {
     "node": ">=14.17.0"
+  },
+  "dependencies": {
+    "@types/react": "^18.3.5",
+    "@types/react-dom": "^18.3.0",
+    "typescript": "^5.6.2",
+    "jsonwebtoken": "^8.5.1"
   }
 }

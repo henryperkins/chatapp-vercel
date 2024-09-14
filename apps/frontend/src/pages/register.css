@@ -1,6 +1,6 @@
-/* File: apps/frontend/src/pages/login.css */
+/* File: apps/frontend/src/pages/register.css */
 
-.login-page {
+.register-page {
   display: flex;
   justify-content: center;
   align-items: center;
@@ -8,32 +8,32 @@
   background-color: #f5f5f5;
 }
 
-.login-form {
+.register-form {
   background-color: #ffffff;
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  width: 350px;
+  width: 400px;
 }
 
-.login-form h1 {
+.register-form h1 {
   margin-bottom: 20px;
   text-align: center;
   color: #333333;
 }
 
-.login-form .form-group {
+.register-form .form-group {
   margin-bottom: 15px;
 }
 
-.login-form label {
+.register-form label {
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
   color: #555555;
 }
 
-.login-form input {
+.register-form input {
   width: 100%;
   padding: 10px 15px;
   font-size: 16px;
@@ -42,21 +42,21 @@
   outline: none;
 }
 
-.login-form input:focus {
+.register-form input:focus {
   border-color: #007bff;
 }
 
-.btn-login {
+.btn-register {
   width: 100%;
   padding: 10px 0;
   font-size: 16px;
-  background-color: #007bff;
+  background-color: #28a745; /* Green button color */
   color: #ffffff;
   border: none;
   border-radius: 5px;
   cursor: pointer;
 }
 
-.btn-login:hover {
-  background-color: #0056b3;
+.btn-register:hover {
+  background-color: #218838;
 }

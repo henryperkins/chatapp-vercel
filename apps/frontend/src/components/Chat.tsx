@@ -1,18 +1,15 @@
 // File: apps/frontend/src/components/Chat.tsx
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useContext } from 'react';
 import Pusher from 'pusher-js';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
 import './Chat.css';
 import fetchWithAuth from '../utils/fetchWithAuth';
-import { API_BASE_URL } from '../utils/config';
-import { getUser } from '../utils/auth';
-
-// Import Font Awesome components and icons
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faPlus, faRedo, faPaperPlane, faHistory } from '@fortawesome/free-solid-svg-icons';
 import ConversationList from './ConversationList';
+import { ConversationContext } from '../contexts/ConversationContext';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -22,21 +19,25 @@ interface Message {
 const notyf = new Notyf();
 
 const Chat: React.FC = () => {
+  const { conversationId, setConversationId } = useContext(ConversationContext);
   const [messages, setMessages] = useState<Message[]>([]);
   const [userMessage, setUserMessage] = useState('');
-  const [conversationId, setConversationId] = useState<string>('');
   const [isTyping, setIsTyping] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const chatHistoryRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    // Initialize conversation on component mount
-    startNewConversation();
+    // Initialize conversation on component mount if not already set
+    if (!conversationId) {
+      startNewConversation();
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
+    if (!conversationId) return;
+
     // Setup Pusher for real-time updates
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
@@ -68,7 +69,7 @@ const Chat: React.FC = () => {
   };
 
   const sendMessage = async () => {
-    if (!userMessage.trim()) return;
+    if (!userMessage.trim() || !conversationId) return;
 
     const message = userMessage.trim();
     setMessages((prevMessages) => [...prevMessages, { role: 'user', content: message }]);
@@ -100,6 +101,8 @@ const Chat: React.FC = () => {
   };
 
   const resetConversation = async () => {
+    if (!conversationId) return;
+
     try {
       await fetchWithAuth('/api/reset_conversation', {
         method: 'POST',
@@ -112,6 +115,7 @@ const Chat: React.FC = () => {
     }
   };
 
+  // The loadConversation function is passed down to ConversationList
   const loadConversation = async (convId: string) => {
     try {
       const data = await fetchWithAuth(`/api/load_conversation/${convId}`, { method: 'GET' });
@@ -148,28 +152,18 @@ const Chat: React.FC = () => {
         <header className="chat-header">
           <h1>Chatbot</h1>
           <nav className="chat-nav">
-            <button
-              onClick={toggleSidebar}
-              title="Toggle Conversation History"
-              aria-label="Toggle Conversation History"
-            >
+            <button onClick={toggleSidebar} title="Toggle Conversation History" aria-label="Toggle Conversation History">
               <FontAwesomeIcon icon={faBars} />
             </button>
-            <button
-              onClick={startNewConversation}
-              title="Start New Conversation"
-              aria-label="Start New Conversation"
-            >
+            <button onClick={startNewConversation} title="Start New Conversation" aria-label="Start New Conversation">
               <FontAwesomeIcon icon={faPlus} />
             </button>
-            <button
-              onClick={resetConversation}
-              title="Reset Conversation"
-              aria-label="Reset Conversation"
-            >
+            <button onClick={resetConversation} title="Reset Conversation" aria-label="Reset Conversation">
               <FontAwesomeIcon icon={faRedo} />
             </button>
-            {/* Add more buttons as needed */}
+            <button onClick={toggleSidebar} title="Conversation History" aria-label="Conversation History">
+              <FontAwesomeIcon icon={faHistory} />
+            </button>
           </nav>
         </header>
 
@@ -194,9 +188,13 @@ const Chat: React.FC = () => {
 
           {/* Message Input Area */}
           <div className="message-input">
-            <form onSubmit={(e) => e.preventDefault()}>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                sendMessage();
+              }}
+            >
               <textarea
-                ref={inputRef}
                 value={userMessage}
                 onChange={handleInput}
                 onKeyDown={handleKeyDown}
@@ -204,12 +202,7 @@ const Chat: React.FC = () => {
                 className="message-input-field"
                 rows={1}
               />
-              <button
-                type="button"
-                className="send-button"
-                aria-label="Send Message"
-                onClick={sendMessage}
-              >
+              <button type="submit" className="send-button" aria-label="Send Message">
                 <FontAwesomeIcon icon={faPaperPlane} />
               </button>
             </form>

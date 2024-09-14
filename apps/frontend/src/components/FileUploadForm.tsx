@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
 import fetchWithAuth from '../utils/fetchWithAuth';
+import { API_BASE_URL } from '../utils/config';
 
 const notyf = new Notyf();
 
@@ -26,12 +27,11 @@ const FileUploadForm: React.FC = () => {
     setUploading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/upload_file`, {
+      const response = await fetch(`${API_BASE_URL}/api/upload_file`, {
         method: 'POST',
         body: formData,
         headers: {
           // Authorization header will be handled by fetchWithAuth
-          Authorization: `Bearer ${localStorage.getItem('jwt_token') || ''}`,
         },
       });
 

@@ -14,6 +14,7 @@ body {
   color: #333333;
 }
 
+/* Home Page Layout */
 .home-page {
   display: flex;
   flex-direction: column;
@@ -30,94 +31,10 @@ body {
   background-color: #ffffff;
   border-left: 1px solid #e0e0e0;
   overflow-y: auto;
-}
-
-/* Utility classes */
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 0 20px;
-}
-
-.btn {
-  display: inline-block;
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #007bff;
-  color: #ffffff;
-  text-align: center;
-  text-decoration: none;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.btn:hover {
-  background-color: #0056b3;
-}
-
-/* FewShotForm and FileUploadForm specific styles */
-.few-shot-form,
-.file-upload-form {
   padding: 20px;
-  background-color: #ffffff;
-  border: 1px solid #e0e0e0;
-  margin: 20px;
-  border-radius: 8px;
 }
 
-.few-shot-form h2,
-.file-upload-form h2 {
-  margin-bottom: 15px;
-  color: #333333;
-}
-
-.few-shot-form .form-group,
-.file-upload-form .form-group {
-  margin-bottom: 15px;
-}
-
-.few-shot-form label,
-.file-upload-form label {
-  display: block;
-  margin-bottom: 5px;
-  font-weight: bold;
-  color: #333333;
-}
-
-.few-shot-form input,
-.file-upload-form input[type='file'] {
-  width: 100%;
-  padding: 10px 15px;
-  font-size: 16px;
-  border: 1px solid #cccccc;
-  border-radius: 5px;
-  outline: none;
-}
-
-.few-shot-form input:focus,
-.file-upload-form input[type='file']:focus {
-  border-color: #007bff;
-}
-
-.btn-add,
-.btn-upload {
-  width: 100%;
-  padding: 10px;
-  font-size: 16px;
-  background-color: #28a745; /* Green for add/upload */
-  color: #ffffff;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.btn-add:hover,
-.btn-upload:hover {
-  background-color: #218838;
-}
-
-/* SearchForm specific styles */
+/* Search Form Styles */
 .search-form {
   padding: 15px 20px;
   background-color: #ffffff;
@@ -155,10 +72,13 @@ body {
   color: #007bff;
 }
 
+.search-loading {
+  padding: 10px 20px;
+  color: #555555;
+}
+
 .search-results {
   padding: 20px;
-  background-color: #ffffff;
-  border-top: 1px solid #e0e0e0;
 }
 
 .search-results h3 {
@@ -192,13 +112,105 @@ body {
   background-color: #f0f0f0;
 }
 
-/* Analysis Result */
-.analysis-result {
-  margin-top: 20px;
-  padding: 15px;
+/* Few-Shot Form Styles */
+.few-shot-form {
+  padding: 20px;
   background-color: #ffffff;
   border: 1px solid #e0e0e0;
-  border-radius: 8px;
+  margin-bottom: 20px;
+  border-radius: 5px;
+}
+
+.few-shot-form h2 {
+  margin-top: 0;
+  color: #333333;
+}
+
+.few-shot-form .form-group {
+  margin-bottom: 15px;
+}
+
+.few-shot-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #555555;
+}
+
+.few-shot-form input {
+  width: 100%;
+  padding: 10px 15px;
+  font-size: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+  outline: none;
+}
+
+.few-shot-form input:focus {
+  border-color: #007bff;
+}
+
+.btn-add {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #28a745; /* Green button color */
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-add:hover {
+  background-color: #218838;
+}
+
+/* File Upload Form Styles */
+.file-upload-form {
+  padding: 20px;
+  background-color: #ffffff;
+  border: 1px solid #e0e0e0;
+  border-radius: 5px;
+}
+
+.file-upload-form h2 {
+  margin-top: 0;
+  color: #333333;
+}
+
+.file-upload-form .form-group {
+  margin-bottom: 15px;
+}
+
+.file-upload-form label {
+  display: block;
+  margin-bottom: 5px;
+  font-weight: bold;
+  color: #555555;
+}
+
+.file-upload-form input[type='file'] {
+  font-size: 16px;
+}
+
+.btn-upload {
+  padding: 10px 20px;
+  font-size: 16px;
+  background-color: #17a2b8; /* Teal button color */
+  color: #ffffff;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-upload:hover {
+  background-color: #138496;
+}
+
+.analysis-result {
+  margin-top: 20px;
+  background-color: #e9ecef;
+  padding: 15px;
+  border-radius: 5px;
 }
 
 .analysis-result h3 {
@@ -207,6 +219,42 @@ body {
 }
 
 .analysis-result p {
-  white-space: pre-wrap;
   color: #555555;
+}
+/* File: apps/frontend/src/styles/globals.css */
+
+/* Home Page Layout */
+.home-page {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.home-header {
+  padding: 15px 20px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.main-content {
+  display: flex;
+  flex: 1;
+}
+
+.main-content .chat-main {
+  flex: 1;
+}
+
+.side-panel {
+  width: 300px;
+  background-color: #ffffff;
+  border-left: 1px solid #e0e0e0;
+  overflow-y: auto;
+  padding: 20px;
+}
+
+@media (max-width: 768px) {
+  .side-panel {
+    display: none; /* Hide side panel on small screens */
+  }
 }

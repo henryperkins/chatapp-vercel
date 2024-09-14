@@ -1,10 +1,9 @@
 // File: apps/frontend/src/utils/fetchWithAuth.ts
 
 import { API_BASE_URL } from './config';
-import { getToken } from './auth';
 
 const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
-  const token = getToken();
+  const token = localStorage.getItem('jwt_token');
 
   const headers = {
     ...(options.headers || {}),
@@ -13,16 +12,27 @@ const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
 
   const response = await fetch(`${API_BASE_URL}${url}`, {
     ...options,
-    headers,
+    headers: {
+      ...headers,
+      // If sending JSON, set the Content-Type
+      ...(options.body && !(options.body instanceof FormData)
+        ? { 'Content-Type': 'application/json' }
+        : {}),
+    },
   });
 
-  const data = await response.json();
-
   if (!response.ok) {
-    throw new Error(data.message || `HTTP error! Status: ${response.status}`);
+    const errorData = await response.json();
+    throw new Error(errorData.message || `HTTP error! Status: ${response.status}`);
   }
 
-  return data;
+  // Attempt to parse JSON, fallback to text
+  const contentType = response.headers.get('content-type');
+  if (contentType && contentType.includes('application/json')) {
+    return response.json();
+  } else {
+    return response.text();
+  }
 };
 
 export default fetchWithAuth;
