@@ -1,0 +1,31 @@
+// File: apps/frontend/src/utils/auth.ts
+
+import jwtDecode from 'jwt-decode';
+import { User } from '@/types/models';
+
+export function saveToken(token: string) {
+  localStorage.setItem('jwt_token', token);
+}
+
+export function getToken(): string | null {
+  return localStorage.getItem('jwt_token');
+}
+
+export function removeToken() {
+  localStorage.removeItem('jwt_token');
+}
+
+export function getUser(): User | null {
+  const token = getToken();
+  if (token) {
+    try {
+      const user = jwtDecode<User>(token);
+      return user;
+    } catch (error) {
+      console.error('Invalid token:', error);
+      removeToken();
+      return null;
+    }
+  }
+  return null;
+}

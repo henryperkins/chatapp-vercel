@@ -1,34 +1,34 @@
-    import React, { useState, useEffect } from 'react';
+// File: apps/frontend/src/components/ConversationList.tsx
+
+import React, { useState, useEffect } from 'react';
 import fetchWithAuth from '../utils/fetchWithAuth';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
-
-const notyf = new Notyf();
-
-interface Conversation {
-  conversation_id: string;
-  title: string;
-  last_updated: string;
-}
+import { Conversation } from '@/types/models';
 
 interface Props {
   loadConversation: (conversation_id: string) => void;
 }
 
+const notyf = new Notyf();
+
 const ConversationList: React.FC<Props> = ({ loadConversation }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     fetchConversations();
   }, []);
 
   const fetchConversations = async () => {
+    setLoading(true);
     try {
-      const response = await fetchWithAuth('/api/list_conversations', { method: 'GET' });
-      const data = await response.json();
+      const data = await fetchWithAuth('/api/list_conversations', { method: 'GET' });
       setConversations(data.conversations);
     } catch (error: any) {
       notyf.error(error.message || 'Failed to load conversations.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -39,15 +39,21 @@ const ConversationList: React.FC<Props> = ({ loadConversation }) => {
   return (
     <div className="conversation-list">
       <h2>Conversations</h2>
-      <ul>
-        {conversations.map((conv) => (
-          <li key={conv.conversation_id}>
-            <button onClick={() => handleConversationClick(conv.conversation_id)}>
-              {conv.title || 'Untitled Conversation'}
-            </button>
-          </li>
-        ))}
-      </ul>
+      {loading ? (
+        <p>Loading...</p>
+      ) : conversations.length === 0 ? (
+        <p>No conversations found.</p>
+      ) : (
+        <ul>
+          {conversations.map((conv) => (
+            <li key={conv.conversation_id}>
+              <button onClick={() => handleConversationClick(conv.conversation_id)}>
+                {conv.title || `Conversation ${conv.conversation_id.slice(0, 8)}`}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };

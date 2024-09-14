@@ -1,13 +1,21 @@
+// File: apps/frontend/src/components/SearchForm.tsx
+
 import React, { useState } from 'react';
-import fetchWithAuth from '../utils/fetchWithAuth';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
+import fetchWithAuth from '../utils/fetchWithAuth';
+
+// Import Font Awesome components and icons
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faSearch } from '@fortawesome/free-solid-svg-icons';
+import { Conversation } from '@/types/models';
 
 const notyf = new Notyf();
 
 const SearchForm: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [searchResults, setSearchResults] = useState<Conversation[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -17,16 +25,20 @@ const SearchForm: React.FC = () => {
       return;
     }
 
+    setLoading(true);
+    setSearchResults([]);
+
     try {
-      const response = await fetchWithAuth('/api/search_conversations', {
+      const data = await fetchWithAuth('/api/search_conversations', {
         method: 'POST',
         body: JSON.stringify({ query: searchQuery.trim() }),
       });
 
-      const data = await response.json();
       setSearchResults(data.results);
     } catch (error: any) {
       notyf.error(error.message || 'Failed to perform search.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -41,18 +53,21 @@ const SearchForm: React.FC = () => {
           aria-label="Search Conversations"
         />
         <button type="submit" className="btn-search" aria-label="Search">
-          <i className="fas fa-search"></i>
+          <FontAwesomeIcon icon={faSearch} />
         </button>
       </form>
+
+      {loading && <p>Searching...</p>}
 
       {searchResults.length > 0 && (
         <div className="search-results">
           <h3>Search Results</h3>
           <ul>
-            {searchResults.map((result, index) => (
-              <li key={index}>
-                {/* Display search result items */}
-                {result.title}
+            {searchResults.map((result) => (
+              <li key={result.conversation_id}>
+                <button onClick={() => window.location.href = `/?conversationId=${result.conversation_id}`}>
+                  {result.title || `Conversation ${result.conversation_id.slice(0, 8)}`}
+                </button>
               </li>
             ))}
           </ul>
