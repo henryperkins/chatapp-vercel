@@ -1,3 +1,5 @@
+// File: apps/backend/pages/api/get_config.ts
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authenticate } from '@/utils/auth';
 

@@ -1,3 +1,5 @@
+// File: apps/backend/pages/api/add_few_shot_example.ts
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authenticate } from '@/utils/auth';
 import clientPromise from '@/utils/mongodb';
@@ -20,7 +22,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const client = await clientPromise;
-    const db = client.db('your-database-name');
+    const db = client.db(process.env.MONGODB_DB_NAME);
     const fewShotExamples = db.collection('few_shot_examples');
 
     await fewShotExamples.insertOne({

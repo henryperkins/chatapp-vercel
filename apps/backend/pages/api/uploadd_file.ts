@@ -1,5 +1,8 @@
+// File: apps/backend/pages/api/upload_file.ts
+
 import type { NextApiRequest, NextApiResponse } from 'next';
-import { IncomingForm } from 'formidable';
+import formidable, { File as FormidableFile } from 'formidable';
+import fs from 'fs';
 import { authenticate } from '@/utils/auth';
 import { allowedFile, fileSizeUnderLimit, MAX_FILE_SIZE_MB } from '@/utils/helpers';
 import { analyzeFileContent } from '@/utils/azure';
@@ -20,7 +23,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return;
   }
 
-  const form = new IncomingForm();
+  const form = new formidable.IncomingForm();
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
@@ -28,7 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       return res.status(500).json({ message: 'Error parsing the uploaded file.' });
     }
 
-    const file = files.file as formidable.File;
+    const file = files.file as FormidableFile;
 
     if (!file) {
       return res.status(400).json({ message: 'No file uploaded.' });
@@ -46,7 +49,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     try {
       // Read file content
-      const content = await fs.promises.readFile(file.filepath, 'utf-8');
+      const content = fs.readFileSync(file.filepath, 'utf-8');
 
       // Analyze file content using Azure OpenAI API
       const analysis = await analyzeFileContent(content);

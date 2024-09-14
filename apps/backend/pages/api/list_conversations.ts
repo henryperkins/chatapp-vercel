@@ -1,3 +1,5 @@
+// File: apps/backend/pages/api/list_conversations.ts
+
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authenticate } from '@/utils/auth';
 import clientPromise from '@/utils/mongodb';
@@ -14,7 +16,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   try {
     const client = await clientPromise;
-    const db = client.db('your-database-name');
+    const db = client.db(process.env.MONGODB_DB_NAME);
     const conversations = db.collection('conversations');
 
     const convos = await conversations
