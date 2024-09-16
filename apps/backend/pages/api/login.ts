@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import bcrypt from 'bcrypt';
-import clientPromise from '@/utils/mongodb';
-import { generateToken, setTokenCookie } from '@/utils/auth';
+import clientPromise from '@/utils/mongodb';  // Ensure this is your MongoDB connection
+import { generateToken, setTokenCookie } from '@/utils/auth';  // Use your token generation method
 import { errorHandler } from '@/middleware/errorHandler';
 
 interface LoginRequest extends NextApiRequest {
@@ -31,7 +31,7 @@ const handler = async (req: LoginRequest, res: NextApiResponse<LoginResponse>) =
 
   try {
     const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB_NAME);
+    const db = client.db(process.env.MONGODB_DB_NAME);  // Ensure your MongoDB DB name is in .env
     const users = db.collection('users');
 
     const user = await users.findOne({ email: email.toLowerCase() });
@@ -40,13 +40,16 @@ const handler = async (req: LoginRequest, res: NextApiResponse<LoginResponse>) =
       return;
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);  // Ensure passwordHash is saved properly
     if (!isPasswordValid) {
       res.status(401).json({ message: 'Invalid email or password.' });
       return;
     }
 
+    // Generate JWT token with user details (you can add more data to payload if needed)
     const token = generateToken({ id: user._id.toString(), email: email.toLowerCase() });
+    
+    // Set the token as a cookie (using HttpOnly for security)
     setTokenCookie(res, token);
 
     res.status(200).json({ message: 'Logged in successfully.' });
