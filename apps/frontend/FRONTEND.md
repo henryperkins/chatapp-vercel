@@ -1,5 +1,3 @@
-## FRONTEND.md
-
 # Frontend Documentation
 
 ## Overview
