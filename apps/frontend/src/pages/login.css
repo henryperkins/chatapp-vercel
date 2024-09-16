@@ -4,8 +4,9 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100vh;
+  min-height: 100vh;
   background-color: #f5f5f5;
+  padding: 20px;
 }
 
 .login-form {
@@ -13,7 +14,8 @@
   padding: 30px;
   border-radius: 10px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  width: 350px;
+  width: 100%;
+  max-width: 400px;
 }
 
 .login-form h1 {
@@ -58,7 +60,12 @@
 }
 
 .btn-login:hover {
-  background-color: #0056b3;
+  background-color: #0069d9;
+}
+
+.btn-login:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
 }
 
 .redirect-text {
@@ -68,10 +75,39 @@
 }
 
 .redirect-text a {
-  color: #007bff;
+  color: #28a745;
   text-decoration: none;
 }
 
 .redirect-text a:hover {
   text-decoration: underline;
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .login-form {
+    padding: 20px;
+  }
+
+  .login-form input {
+    font-size: 14px;
+  }
+
+  .btn-login {
+    font-size: 14px;
+  }
+}
+
+@media (max-width: 320px) {
+  .login-form h1 {
+    font-size: 24px;
+  }
+
+  .login-form input {
+    font-size: 12px;
+  }
+
+  .btn-login {
+    font-size: 12px;
+  }
 }

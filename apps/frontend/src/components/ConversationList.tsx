@@ -1,18 +1,17 @@
-// File: apps/frontend/src/components/ConversationList.tsx
+// File: chatapp-vercel/apps/frontend/src/components/ConversationList.tsx
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
+import { ConversationContext } from '../contexts/ConversationContext';
 import fetchWithAuth from '../utils/fetchWithAuth';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
 import { Conversation, ApiResponse } from '../utils/types';
-
-interface ConversationListProps {
-  loadConversation: (conversation_id: string) => void;
-}
+import './ConversationList.css';
 
 const notyf = new Notyf();
 
-const ConversationList: React.FC<ConversationListProps> = ({ loadConversation }) => {
+const ConversationList: React.FC = () => {
+  const { setConversationId } = useContext(ConversationContext);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -34,7 +33,8 @@ const ConversationList: React.FC<ConversationListProps> = ({ loadConversation })
   };
 
   const handleConversationClick = (conversation_id: string) => {
-    loadConversation(conversation_id);
+    setConversationId(conversation_id);
+    notyf.success('Conversation loaded successfully.');
   };
 
   if (loading) {

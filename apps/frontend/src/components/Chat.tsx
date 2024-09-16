@@ -26,12 +26,13 @@ const Chat: React.FC = () => {
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    // Initialize conversation on component mount if not already set
     if (!conversationId) {
       startNewConversation();
+    } else {
+      loadConversation(conversationId);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [conversationId]);
 
   useEffect(() => {
     if (!conversationId) return;
@@ -124,11 +125,9 @@ const Chat: React.FC = () => {
     }
   };
 
-  // The loadConversation function is passed down to ConversationList
   const loadConversation = async (convId: string) => {
     try {
       const data = await fetchWithAuth(`/api/load_conversation/${convId}`, { method: 'GET' });
-      setConversationId(convId);
       setMessages(data.conversation);
       notyf.success('Conversation loaded.');
       setIsSidebarOpen(false);
@@ -152,7 +151,7 @@ const Chat: React.FC = () => {
     <div className={`chat-page ${isSidebarOpen ? 'sidebar-open' : ''}`}>
       {/* Sidebar for Conversation List */}
       <aside className={`conversation-sidebar ${isSidebarOpen ? 'open' : ''}`}>
-        <ConversationList loadConversation={loadConversation} />
+        <ConversationList />
       </aside>
       {/* Main Chat Area */}
       <main className="chat-main">

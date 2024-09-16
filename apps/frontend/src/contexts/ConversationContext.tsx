@@ -1,3 +1,5 @@
+// File: apps/frontend/src/contexts/ConversationContext.tsx
+
 import React, { createContext, useState, ReactNode } from 'react';
 
 interface ConversationContextType {

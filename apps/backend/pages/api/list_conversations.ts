@@ -3,14 +3,20 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authenticate } from '@/utils/auth';
 import clientPromise from '@/utils/mongodb';
+import { Conversation } from '@/types/models';
+import { errorHandler } from '@/middleware/errorHandler';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  const user = authenticate(req, res);
+interface ListConversationsResponse {
+  conversations: Conversation[];
+}
+
+const handler = async (_req: NextApiRequest, res: NextApiResponse<ListConversationsResponse>) => {
+  const user = authenticate(_req, res);
   if (!user) return;
 
-  if (req.method !== 'GET') {
+  if (_req.method !== 'GET') {
     res.setHeader('Allow', 'GET');
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+    res.status(405).json({ conversations: [] });
     return;
   }
 
@@ -19,15 +25,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const db = client.db(process.env.MONGODB_DB_NAME);
     const conversations = db.collection('conversations');
 
-    const convos = await conversations
+    const userConversations = await conversations
       .find({ user_id: user.id })
-      .project({ conversation_id: 1, title: 1, updated_at: 1 })
       .sort({ updated_at: -1 })
       .toArray();
 
-    res.status(200).json({ conversations: convos });
+    res.status(200).json({ conversations: userConversations });
   } catch (error: any) {
-    console.error('Error listing conversations:', error);
-    res.status(500).json({ message: 'An error occurred.', error: error.message });
+    console.error('List Conversations Error:', error);
+    res.status(500).json({ conversations: [] });
   }
-}
+};
+
+export default errorHandler(handler);
