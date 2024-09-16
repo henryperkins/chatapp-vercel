@@ -1,5 +1,3 @@
-// File: apps/frontend/src/components/FileUploadForm.tsx
-
 import React, { useState } from 'react';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';

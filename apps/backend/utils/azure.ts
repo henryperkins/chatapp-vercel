@@ -1,5 +1,3 @@
-// File: apps/backend/utils/azure.ts
-
 import axios from 'axios';
 
 export async function analyzeFileContent(content: string): Promise<string> {

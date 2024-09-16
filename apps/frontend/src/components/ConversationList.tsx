@@ -1,33 +1,31 @@
 // File: apps/frontend/src/components/ConversationList.tsx
 
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import fetchWithAuth from '../utils/fetchWithAuth';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
-import { ConversationContext } from '../contexts/ConversationContext';
+import { Conversation, ApiResponse } from '../utils/types';
 
-interface Conversation {
-  conversation_id: string;
-  title?: string;
-  updated_at: string;
+interface ConversationListProps {
+  loadConversation: (conversation_id: string) => void;
 }
 
 const notyf = new Notyf();
 
-const ConversationList: React.FC = () => {
-  const { setConversationId } = useContext(ConversationContext);
+const ConversationList: React.FC<ConversationListProps> = ({ loadConversation }) => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     fetchConversations();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchConversations = async () => {
     try {
-      const data = await fetchWithAuth('/api/list_conversations', { method: 'GET' });
-      setConversations(data.conversations);
+      const data: ApiResponse<{ conversations: Conversation[] }> = await fetchWithAuth('/api/list_conversations', {
+        method: 'GET',
+      });
+      setConversations(data.conversations || []);
     } catch (error: any) {
       notyf.error(error.message || 'Failed to load conversations.');
     } finally {
@@ -36,9 +34,7 @@ const ConversationList: React.FC = () => {
   };
 
   const handleConversationClick = (conversation_id: string) => {
-    setConversationId(conversation_id);
-    // Optionally, emit an event to notify other components
-    window.dispatchEvent(new CustomEvent('loadConversation', { detail: conversation_id }));
+    loadConversation(conversation_id);
   };
 
   if (loading) {

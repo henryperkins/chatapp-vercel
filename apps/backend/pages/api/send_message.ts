@@ -1,5 +1,3 @@
-// File: apps/backend/pages/api/send_message.ts
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authenticate } from '@/utils/auth';
 import clientPromise from '@/utils/mongodb';
@@ -28,6 +26,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DB_NAME);
   const conversations = db.collection('conversations');
+  const fewShotExamples = db.collection('few_shot_examples');
 
   const conversation = await conversations.findOne({
     conversation_id,
@@ -39,6 +38,24 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     (error as any).status = 404;
     throw error;
   }
+
+  // Retrieve few-shot examples
+  const examples = await fewShotExamples
+    .find({ user_id: user.id })
+    .project({ user_prompt: 1, assistant_response: 1, _id: 0 })
+    .toArray();
+
+  // Construct the prompt with few-shot examples
+  const promptMessages = examples.map((ex) => ({
+    role: 'system',
+    content: `User: ${ex.user_prompt}\nAssistant: ${ex.assistant_response}`,
+  }));
+
+  const fullMessages = [
+    ...promptMessages,
+    ...conversation.messages,
+    { role: 'user', content: message },
+  ];
 
   // Add user's message to the conversation
   await conversations.updateOne(
@@ -52,7 +69,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   );
 
   // Get assistant's response from Azure OpenAI API
-  const assistantResponse = await getAzureResponse([...conversation.messages, { role: 'user', content: message }]);
+  const assistantResponse = await getAzureResponse(fullMessages);
 
   // Add assistant's response to the conversation
   await conversations.updateOne(

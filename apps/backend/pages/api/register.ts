@@ -1,5 +1,3 @@
-// File: apps/backend/pages/api/register.ts
-
 import type { NextApiRequest, NextApiResponse } from 'next';
 import clientPromise from '@/utils/mongodb';
 import bcrypt from 'bcrypt';

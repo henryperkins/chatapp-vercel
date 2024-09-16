@@ -1,5 +1,3 @@
-// File: apps/frontend/src/components/Chat.tsx
-
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import Pusher from 'pusher-js';
 import { Notyf } from 'notyf';
@@ -10,6 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faPlus, faRedo, faPaperPlane, faHistory } from '@fortawesome/free-solid-svg-icons';
 import ConversationList from './ConversationList';
 import { ConversationContext } from '../contexts/ConversationContext';
+import { PUSHER_KEY, PUSHER_CLUSTER } from '../utils/config';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -38,9 +37,8 @@ const Chat: React.FC = () => {
   useEffect(() => {
     if (!conversationId) return;
 
-    // Setup Pusher for real-time updates
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
+    const pusher = new Pusher(PUSHER_KEY, {
+      cluster: PUSHER_CLUSTER,
     });
 
     const channel = pusher.subscribe('chat-channel');

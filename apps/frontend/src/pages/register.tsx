@@ -1,11 +1,10 @@
-// File: apps/frontend/src/pages/register.tsx
-
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
 import { saveToken } from '../utils/auth';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
-import './register.css'; // Create this CSS file for styling
+import './register.css';
+import Link from 'next/link';
 
 const notyf = new Notyf();
 
@@ -99,6 +98,9 @@ const RegisterPage: React.FC = () => {
         <button type="submit" className="btn btn-register" disabled={loading}>
           {loading ? 'Registering...' : 'Register'}
         </button>
+        <p className="redirect-text">
+          Already have an account? <Link href="/login">Login here</Link>
+        </p>
       </form>
     </div>
   );

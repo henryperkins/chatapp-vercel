@@ -3,8 +3,16 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authenticate } from '@/utils/auth';
 import clientPromise from '@/utils/mongodb';
+import { errorHandler } from '@/middleware/errorHandler';
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+interface AddFewShotRequest extends NextApiRequest {
+  body: {
+    user_prompt: string;
+    assistant_response: string;
+  };
+}
+
+const handler = async (req: AddFewShotRequest, res: NextApiResponse) => {
   const user = authenticate(req, res);
   if (!user) return;
 
@@ -17,24 +25,23 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const { user_prompt, assistant_response } = req.body;
 
   if (!user_prompt || !assistant_response) {
-    return res.status(400).json({ message: 'User prompt and assistant response are required.' });
+    const error = new Error('User prompt and assistant response are required.');
+    (error as any).status = 400;
+    throw error;
   }
 
-  try {
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB_NAME);
-    const fewShotExamples = db.collection('few_shot_examples');
+  const client = await clientPromise;
+  const db = client.db(process.env.MONGODB_DB_NAME);
+  const fewShotExamples = db.collection('few_shot_examples');
 
-    await fewShotExamples.insertOne({
-      user_id: user.id,
-      user_prompt,
-      assistant_response,
-      created_at: new Date(),
-    });
+  await fewShotExamples.insertOne({
+    user_id: user.id,
+    user_prompt,
+    assistant_response,
+    created_at: new Date(),
+  });
 
-    res.status(200).json({ message: 'Few-shot example added successfully.' });
-  } catch (error: any) {
-    console.error('Error adding few-shot example:', error);
-    res.status(500).json({ message: 'An error occurred.', error: error.message });
-  }
-}
+  res.status(200).json({ message: 'Few-shot example added successfully.' });
+};
+
+export default errorHandler(handler);

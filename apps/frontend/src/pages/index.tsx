@@ -1,5 +1,3 @@
-// File: apps/frontend/src/pages/index.tsx
-
 import React, { useEffect, useState, useContext } from 'react';
 import Chat from '../components/Chat';
 import FewShotForm from '../components/FewShotForm';

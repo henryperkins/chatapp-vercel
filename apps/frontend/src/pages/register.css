@@ -60,3 +60,18 @@
 .btn-register:hover {
   background-color: #218838;
 }
+
+.redirect-text {
+  margin-top: 15px;
+  text-align: center;
+  color: #555555;
+}
+
+.redirect-text a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+.redirect-text a:hover {
+  text-decoration: underline;
+}

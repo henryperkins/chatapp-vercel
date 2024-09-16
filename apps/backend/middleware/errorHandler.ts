@@ -6,7 +6,7 @@ interface CustomError extends Error {
   status?: number;
 }
 
-export const errorHandler = async (fn: Function) => {
+export const errorHandler = (fn: Function) => {
   return async (req: NextApiRequest, res: NextApiResponse) => {
     try {
       await fn(req, res);

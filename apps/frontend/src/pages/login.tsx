@@ -5,7 +5,8 @@ import { useRouter } from 'next/router';
 import { saveToken } from '../utils/auth';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
-import './login.css'; // Import styles specific to the login page
+import './login.css';
+import Link from 'next/link';
 
 const notyf = new Notyf();
 
@@ -81,6 +82,9 @@ const LoginPage: React.FC = () => {
         <button type="submit" className="btn btn-login" disabled={loading}>
           {loading ? 'Logging in...' : 'Login'}
         </button>
+        <p className="redirect-text">
+          Don't have an account? <Link href="/register">Register here</Link>
+        </p>
       </form>
     </div>
   );
