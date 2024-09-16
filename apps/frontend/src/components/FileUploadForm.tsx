@@ -1,8 +1,11 @@
+// File: apps/frontend/src/components/FileUploadForm.tsx
+
 import React, { useState } from 'react';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
 import fetchWithAuth from '../utils/fetchWithAuth';
 import { API_BASE_URL } from '../utils/config';
+import './FileUploadForm.css';
 
 const notyf = new Notyf();
 
@@ -28,9 +31,7 @@ const FileUploadForm: React.FC = () => {
       const response = await fetch(`${API_BASE_URL}/api/upload_file`, {
         method: 'POST',
         body: formData,
-        headers: {
-          // Authorization header will be handled by fetchWithAuth
-        },
+        // No need to set 'Content-Type' header; browser sets it automatically for FormData
       });
 
       const data = await response.json();
@@ -64,7 +65,7 @@ const FileUploadForm: React.FC = () => {
           <input
             type="file"
             id="file-input"
-            accept=".txt,.json,.md"
+            accept=".txt,.md,.json"
             onChange={handleFileChange}
             aria-label="File Input"
             required

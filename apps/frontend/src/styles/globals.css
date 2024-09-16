@@ -1,37 +1,5 @@
 /* File: apps/frontend/src/styles/globals.css */
 
-/* Home Page Layout */
-.home-page {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
+@import 'notyf/notyf.min.css';
 
-.home-header {
-  padding: 15px 20px;
-  background-color: #ffffff;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.main-content {
-  display: flex;
-  flex: 1;
-}
-
-.main-content .chat-main {
-  flex: 1;
-}
-
-.side-panel {
-  width: 300px;
-  background-color: #ffffff;
-  border-left: 1px solid #e0e0e0;
-  overflow-y: auto;
-  padding: 20px;
-}
-
-@media (max-width: 768px) {
-  .side-panel {
-    display: none; /* Hide side panel on small screens */
-  }
-}
+/* ... existing styles ... */

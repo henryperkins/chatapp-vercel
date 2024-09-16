@@ -1,63 +1,82 @@
 // File: apps/backend/pages/api/upload_file.ts
 
 import type { NextApiRequest, NextApiResponse } from 'next';
-import formidable, { File as FormidableFile } from 'formidable';
+import formidable from 'formidable';
 import fs from 'fs';
 import { authenticate } from '@/utils/auth';
-import { allowedFile, fileSizeUnderLimit, MAX_FILE_SIZE_MB } from '@/utils/helpers';
 import { analyzeFileContent } from '@/utils/azure';
+import clientPromise from '@/utils/mongodb';
+import { errorHandler } from '@/middleware/errorHandler';
+
+interface UploadFileResponse {
+  message: string;
+  analysis?: string;
+}
 
 export const config = {
   api: {
-    bodyParser: false,
+    bodyParser: false, // Disable Next.js default body parser
   },
 };
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+const handler = async (req: NextApiRequest, res: NextApiResponse<UploadFileResponse>) => {
   const user = authenticate(req, res);
   if (!user) return;
 
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+    res.status(405).json({ message: `Method ${req.method} Not Allowed` });
     return;
   }
 
   const form = new formidable.IncomingForm();
+  form.maxFileSize = parseFloat(process.env.MAX_FILE_SIZE_MB || '5') * 1024 * 1024; // Convert MB to bytes
+  form.keepExtensions = true;
 
   form.parse(req, async (err, fields, files) => {
     if (err) {
-      console.error('Formidable error:', err);
-      return res.status(500).json({ message: 'Error parsing the uploaded file.' });
+      console.error('Formidable Error:', err);
+      res.status(400).json({ message: 'Error parsing the uploaded file.' });
+      return;
     }
 
-    const file = files.file as FormidableFile;
-
+    const file = files.file as formidable.File;
     if (!file) {
-      return res.status(400).json({ message: 'No file uploaded.' });
+      res.status(400).json({ message: 'No file uploaded.' });
+      return;
     }
 
-    if (!allowedFile(file.originalFilename || '')) {
-      return res.status(400).json({ message: 'File type not allowed.' });
-    }
+    const allowedExtensions = (process.env.ALLOWED_EXTENSIONS || 'txt,md,json').split(',').map(ext => ext.trim().toLowerCase());
+    const fileExtension = file.name.split('.').pop()?.toLowerCase();
 
-    if (!fileSizeUnderLimit(file.size)) {
-      return res
-        .status(400)
-        .json({ message: `File size exceeds the limit of ${MAX_FILE_SIZE_MB} MB.` });
+    if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+      res.status(400).json({ message: `File type not allowed. Allowed types: ${allowedExtensions.join(', ')}` });
+      return;
     }
 
     try {
-      // Read file content
-      const content = fs.readFileSync(file.filepath, 'utf-8');
+      const fileContent = fs.readFileSync(file.filepath, 'utf-8');
+      const analysis = await analyzeFileContent(fileContent);
 
-      // Analyze file content using Azure OpenAI API
-      const analysis = await analyzeFileContent(content);
+      // Optionally, store file and analysis in the database
+      const client = await clientPromise;
+      const db = client.db(process.env.MONGODB_DB_NAME);
+      const uploads = db.collection('uploads');
 
-      res.status(200).json({ analysis });
+      await uploads.insertOne({
+        user_id: user.id,
+        filename: file.name,
+        filepath: file.filepath,
+        analysis,
+        uploaded_at: new Date(),
+      });
+
+      res.status(200).json({ message: 'File uploaded and analyzed successfully.', analysis });
     } catch (error: any) {
-      console.error('Error processing file:', error);
-      res.status(500).json({ message: 'An error occurred.', error: error.message });
+      console.error('Upload File Error:', error);
+      res.status(500).json({ message: error.message || 'Failed to upload and analyze the file.' });
     }
   });
-}
+};
+
+export default errorHandler(handler);

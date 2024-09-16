@@ -8,7 +8,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faPlus, faRedo, faPaperPlane, faHistory } from '@fortawesome/free-solid-svg-icons';
 import ConversationList from './ConversationList';
 import { ConversationContext } from '../contexts/ConversationContext';
-import { PUSHER_KEY, PUSHER_CLUSTER } from '../utils/config';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -37,8 +36,9 @@ const Chat: React.FC = () => {
   useEffect(() => {
     if (!conversationId) return;
 
-    const pusher = new Pusher(PUSHER_KEY, {
-      cluster: PUSHER_CLUSTER,
+    // Setup Pusher for real-time updates
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
     });
 
     const channel = pusher.subscribe('chat-channel');
@@ -75,11 +75,17 @@ const Chat: React.FC = () => {
     setIsTyping(true);
 
     try {
-      await fetchWithAuth('/api/send_message', {
+      const response = await fetchWithAuth('/api/send_message', {
         method: 'POST',
         body: JSON.stringify({ conversation_id: conversationId, message }),
       });
-      // Assistant's response will be handled via Pusher
+
+      if (response.message === 'Message sent successfully.') {
+        // Assistant's response will be handled via Pusher
+      } else {
+        notyf.error(response.message || 'Failed to send message.');
+        setIsTyping(false);
+      }
     } catch (error: any) {
       notyf.error(error.message || 'Failed to send message.');
       setIsTyping(false);
@@ -102,12 +108,17 @@ const Chat: React.FC = () => {
     if (!conversationId) return;
 
     try {
-      await fetchWithAuth('/api/reset_conversation', {
+      const response = await fetchWithAuth('/api/reset_conversation', {
         method: 'POST',
         body: JSON.stringify({ conversation_id: conversationId }),
       });
-      setMessages([]);
-      notyf.success('Conversation reset.');
+
+      if (response.message === 'Conversation reset successfully.') {
+        setMessages([]);
+        notyf.success('Conversation has been reset.');
+      } else {
+        notyf.error(response.message || 'Failed to reset conversation.');
+      }
     } catch (error: any) {
       notyf.error(error.message || 'Failed to reset conversation.');
     }
@@ -143,17 +154,16 @@ const Chat: React.FC = () => {
       <aside className={`conversation-sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <ConversationList loadConversation={loadConversation} />
       </aside>
-
       {/* Main Chat Area */}
       <main className="chat-main">
         {/* Header */}
         <header className="chat-header">
-          <h1>Chatbot</h1>
+          <h1>Llama Token Chatbot</h1>
           <nav className="chat-nav">
             <button onClick={toggleSidebar} title="Toggle Conversation History" aria-label="Toggle Conversation History">
               <FontAwesomeIcon icon={faBars} />
             </button>
-            <button onClick={startNewConversation} title="Start New Conversation" aria-label="Start New Conversation">
+            <button onClick={startNewConversation} title="New Conversation" aria-label="Start New Conversation">
               <FontAwesomeIcon icon={faPlus} />
             </button>
             <button onClick={resetConversation} title="Reset Conversation" aria-label="Reset Conversation">
@@ -164,7 +174,6 @@ const Chat: React.FC = () => {
             </button>
           </nav>
         </header>
-
         {/* Conversation Area */}
         <div className="chat-container">
           <div className="chat-history" ref={chatHistoryRef}>
@@ -183,7 +192,6 @@ const Chat: React.FC = () => {
               </div>
             )}
           </div>
-
           {/* Message Input Area */}
           <div className="message-input">
             <form
@@ -199,6 +207,7 @@ const Chat: React.FC = () => {
                 placeholder="Type your message and press Enter..."
                 className="message-input-field"
                 rows={1}
+                aria-label="Message Input"
               />
               <button type="submit" className="send-button" aria-label="Send Message">
                 <FontAwesomeIcon icon={faPaperPlane} />

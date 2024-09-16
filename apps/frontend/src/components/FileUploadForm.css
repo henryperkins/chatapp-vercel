@@ -1,13 +1,16 @@
-/* File Upload Form styles */
+/* File: apps/frontend/src/components/FileUploadForm.css */
+
 .file-upload-form {
-  padding: 20px;
   background-color: #ffffff;
-  border: 1px solid #e0e0e0;
-  margin: 20px 0;
+  padding: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  margin-bottom: 20px;
 }
 
 .file-upload-form h2 {
-  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333333;
 }
 
 .file-upload-form .form-group {
@@ -18,22 +21,47 @@
   display: block;
   margin-bottom: 5px;
   font-weight: bold;
+  color: #555555;
 }
 
-.file-upload-form input[type='file'] {
-  font-size: 16px;
+.file-upload-form input[type="file"] {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  outline: none;
+}
+
+.file-upload-form input[type="file"]:focus {
+  border-color: #007bff;
 }
 
 .file-upload-form .btn-upload {
-  padding: 10px 20px;
-  font-size: 16px;
-  background-color: #007bff;
+  width: 100%;
+  padding: 10px;
+  background-color: #28a745; /* Green button color */
   color: #ffffff;
   border: none;
-  border-radius: 5px;
+  border-radius: 4px;
   cursor: pointer;
 }
 
 .file-upload-form .btn-upload:hover {
-  background-color: #0056b3;
+  background-color: #218838;
+}
+
+.analysis-result {
+  margin-top: 20px;
+}
+
+.analysis-result h3 {
+  margin-bottom: 10px;
+  color: #333333;
+}
+
+.analysis-result p {
+  background-color: #f8f9fa;
+  padding: 10px;
+  border-radius: 4px;
+  color: #555555;
 }
