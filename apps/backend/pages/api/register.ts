@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import clientPromise from '@/utils/mongodb';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import clientPromise from '@/utils/mongodb';
+import { generateToken, setTokenCookie } from '@/utils/auth';
 import { errorHandler } from '@/middleware/errorHandler';
 
 interface RegisterRequest extends NextApiRequest {
@@ -11,45 +11,52 @@ interface RegisterRequest extends NextApiRequest {
   };
 }
 
-const handler = async (req: RegisterRequest, res: NextApiResponse) => {
+interface RegisterResponse {
+  message: string;
+}
+
+const handler = async (req: RegisterRequest, res: NextApiResponse<RegisterResponse>) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+    res.status(405).json({ message: `Method ${req.method} Not Allowed` });
     return;
   }
 
   const { email, password } = req.body;
 
   if (!email || !password) {
-    const error = new Error('Email and password are required.');
-    (error as any).status = 400;
-    throw error;
+    res.status(400).json({ message: 'Email and password are required.' });
+    return;
   }
 
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DB_NAME);
-  const users = db.collection('users');
+  try {
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB_NAME);
+    const users = db.collection('users');
 
-  const existingUser = await users.findOne({ email });
-  if (existingUser) {
-    const error = new Error('Email is already registered.');
-    (error as any).status = 409;
-    throw error;
+    const existingUser = await users.findOne({ email: email.toLowerCase() });
+    if (existingUser) {
+      res.status(409).json({ message: 'Email is already registered.' });
+      return;
+    }
+
+    const saltRounds = 10;
+    const hashedPassword = await bcrypt.hash(password, saltRounds);
+
+    const newUser = await users.insertOne({
+      email: email.toLowerCase(),
+      passwordHash: hashedPassword,
+      createdAt: new Date(),
+    });
+
+    const token = generateToken({ id: newUser.insertedId.toString(), email: email.toLowerCase() });
+    setTokenCookie(res, token);
+
+    res.status(201).json({ message: 'User registered successfully.' });
+  } catch (error: any) {
+    console.error('Registration Error:', error);
+    res.status(500).json({ message: 'Internal Server Error.' });
   }
-
-  const passwordHash = await bcrypt.hash(password, 10);
-
-  const newUser = await users.insertOne({
-    email,
-    passwordHash,
-    created_at: new Date(),
-  });
-
-  const token = jwt.sign({ id: newUser.insertedId, email }, process.env.JWT_SECRET || 'your_jwt_secret', {
-    expiresIn: '7d',
-  });
-
-  res.status(201).json({ token });
 };
 
 export default errorHandler(handler);

@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import { saveToken } from '../utils/auth';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
-import './register.css';
-import Link from 'next/link';
+import { API_BASE_URL } from '../utils/config';
+import './register.css'; // Create this CSS file for styling
 
 const notyf = new Notyf();
 
 const RegisterPage: React.FC = () => {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState<boolean>(false);
-  const router = useRouter();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +30,7 @@ const RegisterPage: React.FC = () => {
     setLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/register`, {
+      const response = await fetch(`${API_BASE_URL}/api/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -42,9 +41,8 @@ const RegisterPage: React.FC = () => {
       const data = await response.json();
 
       if (response.ok) {
-        saveToken(data.token);
         notyf.success('Registered successfully.');
-        router.push('/');
+        router.push('/'); // Redirect to home or chat page
       } else {
         notyf.error(data.message || 'Registration failed.');
       }
@@ -99,7 +97,7 @@ const RegisterPage: React.FC = () => {
           {loading ? 'Registering...' : 'Register'}
         </button>
         <p className="redirect-text">
-          Already have an account? <Link href="/login">Login here</Link>
+          Already have an account? <a href="/login">Login here</a>
         </p>
       </form>
     </div>

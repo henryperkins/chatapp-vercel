@@ -1,33 +1,30 @@
-// File: apps/frontend/src/pages/login.tsx
-
 import React, { useState } from 'react';
 import { useRouter } from 'next/router';
-import { saveToken } from '../utils/auth';
 import { Notyf } from 'notyf';
 import 'notyf/notyf.min.css';
-import './login.css';
-import Link from 'next/link';
+import { API_BASE_URL } from '../utils/config';
+import './login.css'; // Create this CSS file for styling
 
 const notyf = new Notyf();
 
 const LoginPage: React.FC = () => {
+  const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState<boolean>(false);
-  const router = useRouter();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!email.trim() || !password.trim()) {
-      notyf.error('Please enter both email and password.');
+      notyf.error('Email and password are required.');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_BASE_URL}/api/login`, {
+      const response = await fetch(`${API_BASE_URL}/api/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -38,9 +35,8 @@ const LoginPage: React.FC = () => {
       const data = await response.json();
 
       if (response.ok) {
-        saveToken(data.token);
         notyf.success('Logged in successfully.');
-        router.push('/');
+        router.push('/'); // Redirect to home or chat page
       } else {
         notyf.error(data.message || 'Login failed.');
       }
@@ -83,7 +79,7 @@ const LoginPage: React.FC = () => {
           {loading ? 'Logging in...' : 'Login'}
         </button>
         <p className="redirect-text">
-          Don't have an account? <Link href="/register">Register here</Link>
+          Don't have an account? <a href="/register">Register here</a>
         </p>
       </form>
     </div>

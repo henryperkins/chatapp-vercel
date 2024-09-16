@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
-import clientPromise from '@/utils/mongodb';
 import bcrypt from 'bcrypt';
-import jwt from 'jsonwebtoken';
+import clientPromise from '@/utils/mongodb';
+import { generateToken, setTokenCookie } from '@/utils/auth';
 import { errorHandler } from '@/middleware/errorHandler';
 
 interface LoginRequest extends NextApiRequest {
@@ -11,44 +11,49 @@ interface LoginRequest extends NextApiRequest {
   };
 }
 
-const handler = async (req: LoginRequest, res: NextApiResponse) => {
+interface LoginResponse {
+  message: string;
+}
+
+const handler = async (req: LoginRequest, res: NextApiResponse<LoginResponse>) => {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
-    res.status(405).end(`Method ${req.method} Not Allowed`);
+    res.status(405).json({ message: `Method ${req.method} Not Allowed` });
     return;
   }
 
   const { email, password } = req.body;
 
   if (!email || !password) {
-    const error = new Error('Email and password are required.');
-    (error as any).status = 400;
-    throw error;
+    res.status(400).json({ message: 'Email and password are required.' });
+    return;
   }
 
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DB_NAME);
-  const users = db.collection('users');
+  try {
+    const client = await clientPromise;
+    const db = client.db(process.env.MONGODB_DB_NAME);
+    const users = db.collection('users');
 
-  const user = await users.findOne({ email });
-  if (!user) {
-    const error = new Error('Invalid email or password.');
-    (error as any).status = 401;
-    throw error;
+    const user = await users.findOne({ email: email.toLowerCase() });
+    if (!user) {
+      res.status(401).json({ message: 'Invalid email or password.' });
+      return;
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
+    if (!isPasswordValid) {
+      res.status(401).json({ message: 'Invalid email or password.' });
+      return;
+    }
+
+    const token = generateToken({ id: user._id.toString(), email: email.toLowerCase() });
+    setTokenCookie(res, token);
+
+    res.status(200).json({ message: 'Logged in successfully.' });
+  } catch (error: any) {
+    console.error('Login Error:', error);
+    res.status(500).json({ message: 'Internal Server Error.' });
   }
-
-  const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-  if (!isPasswordValid) {
-    const error = new Error('Invalid email or password.');
-    (error as any).status = 401;
-    throw error;
-  }
-
-  const token = jwt.sign({ id: user._id, email }, process.env.JWT_SECRET || 'your_jwt_secret', {
-    expiresIn: '7d',
-  });
-
-  res.status(200).json({ token });
 };
 
 export default errorHandler(handler);

@@ -158,12 +158,12 @@ const Chat: React.FC = () => {
       <main className="chat-main">
         {/* Header */}
         <header className="chat-header">
-          <h1>Llama Token Chatbot</h1>
+          <h1>Chatbot</h1>
           <nav className="chat-nav">
             <button onClick={toggleSidebar} title="Toggle Conversation History" aria-label="Toggle Conversation History">
               <FontAwesomeIcon icon={faBars} />
             </button>
-            <button onClick={startNewConversation} title="New Conversation" aria-label="Start New Conversation">
+            <button onClick={startNewConversation} title="Start New Conversation" aria-label="Start New Conversation">
               <FontAwesomeIcon icon={faPlus} />
             </button>
             <button onClick={resetConversation} title="Reset Conversation" aria-label="Reset Conversation">
