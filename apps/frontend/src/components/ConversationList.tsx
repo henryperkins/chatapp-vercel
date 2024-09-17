@@ -14,6 +14,7 @@ const ConversationList: React.FC = () => {
   const { setConversationId } = useContext(ConversationContext);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchConversations();
@@ -21,38 +22,78 @@ const ConversationList: React.FC = () => {
 
   const fetchConversations = async () => {
     try {
-      const data: ApiResponse<{ conversations: Conversation[] }> = await fetchWithAuth('/api/list_conversations', {
+      setLoading(true);
+      setError(null);
+      const response = await fetchWithAuth('/api/list_conversations', {
         method: 'GET',
       });
-      setConversations(data.conversations || []);
+      const data: ApiResponse<{ conversations: Conversation[] }> = await response.json();
+      
+      if (response.ok) {
+        setConversations(data.conversations || []);
+      } else {
+        throw new Error(data.error || 'Failed to load conversations');
+      }
     } catch (error: any) {
-      notyf.error(error.message || 'Failed to load conversations.');
+      setError(error.message || 'An unexpected error occurred while loading conversations');
+      notyf.error(error.message || 'Failed to load conversations. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
-  const handleConversationClick = (conversation_id: string) => {
-    setConversationId(conversation_id);
-    notyf.success('Conversation loaded successfully.');
+  const handleConversationClick = async (conversation_id: string) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const response = await fetchWithAuth(`/api/load_conversation/${conversation_id}`, {
+        method: 'GET',
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setConversationId(conversation_id);
+        notyf.success('Conversation loaded successfully.');
+      } else {
+        throw new Error(data.error || 'Failed to load conversation');
+      }
+    } catch (error: any) {
+      setError(error.message || 'An unexpected error occurred while loading the conversation');
+      notyf.error(error.message || 'Failed to load conversation. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (loading) {
-    return <div className="conversation-list">Loading...</div>;
+    return <div className="conversation-list">Loading conversations...</div>;
+  }
+
+  if (error) {
+    return (
+      <div className="conversation-list">
+        <div className="error-message">{error}</div>
+        <button onClick={fetchConversations}>Retry</button>
+      </div>
+    );
   }
 
   return (
     <div className="conversation-list">
       <h2>Conversations</h2>
-      <ul>
-        {conversations.map((conv) => (
-          <li key={conv.conversation_id}>
-            <button onClick={() => handleConversationClick(conv.conversation_id)}>
-              {conv.title || 'Untitled Conversation'}
-            </button>
-          </li>
-        ))}
-      </ul>
+      {conversations.length === 0 ? (
+        <p>No conversations found. Start a new one!</p>
+      ) : (
+        <ul>
+          {conversations.map((conv) => (
+            <li key={conv.conversation_id}>
+              <button onClick={() => handleConversationClick(conv.conversation_id)}>
+                {conv.title || 'Untitled Conversation'}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 };

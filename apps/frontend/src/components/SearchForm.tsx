@@ -1,84 +1,64 @@
-// File: apps/frontend/src/components/SearchForm.tsx
-
 import React, { useState } from 'react';
-import { Notyf } from 'notyf';
-import 'notyf/notyf.min.css';
 import fetchWithAuth from '../utils/fetchWithAuth';
-
-// Import Font Awesome components and icons
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faSearch } from '@fortawesome/free-solid-svg-icons';
-
-interface SearchResult {
-  conversation_id: string;
-  title?: string;
-  updated_at: string;
-}
+import { Notyf } from 'notyf';
 
 const notyf = new Notyf();
 
+interface SearchResult {
+  id: string;
+  content: string;
+}
+
 const SearchForm: React.FC = () => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
-  const [searching, setSearching] = useState<boolean>(false);
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState<SearchResult[]>([]);
 
-  const handleSearch = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-
-    if (!searchQuery.trim()) {
-      notyf.error('Please enter a search query.');
+    if (!query.trim()) {
+      notyf.error('Please enter a search query');
       return;
     }
 
-    setSearching(true);
-
     try {
-      const data = await fetchWithAuth('/api/search_conversations', {
-        method: 'POST',
-        body: JSON.stringify({ query: searchQuery.trim() }),
+      const response = await fetchWithAuth(`/api/search?q=${encodeURIComponent(query)}`, {
+        method: 'GET',
       });
 
-      setSearchResults(data.results);
-    } catch (error: any) {
-      notyf.error(error.message || 'Failed to perform search.');
-    } finally {
-      setSearching(false);
+      if (response.ok) {
+        const data = await response.json();
+        setResults(data.results);
+      } else {
+        notyf.error('Failed to perform search');
+      }
+    } catch (error) {
+      notyf.error('An error occurred while searching');
     }
   };
 
   return (
-    <section className="search-form">
-      <form onSubmit={handleSearch}>
+    <div className="search-form">
+      <h2>Search Conversations</h2>
+      <form onSubmit={handleSubmit}>
         <input
           type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search conversations..."
-          aria-label="Search Conversations"
-          required
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Enter search query"
         />
-        <button type="submit" className="btn-search" aria-label="Search">
-          <FontAwesomeIcon icon={faSearch} />
-        </button>
+        <button type="submit">Search</button>
       </form>
-
-      {searching && <div className="search-loading">Searching...</div>}
-
-      {searchResults.length > 0 && (
+      {results.length > 0 && (
         <div className="search-results">
-          <h3>Search Results</h3>
+          <h3>Search Results:</h3>
           <ul>
-            {searchResults.map((result) => (
-              <li key={result.conversation_id}>
-                <button onClick={() => window.dispatchEvent(new CustomEvent('loadConversation', { detail: result.conversation_id }))}>
-                  {result.title || 'Untitled Conversation'}
-                </button>
-              </li>
+            {results.map((result) => (
+              <li key={result.id}>{result.content}</li>
             ))}
           </ul>
         </div>
       )}
-    </section>
+    </div>
   );
 };
 

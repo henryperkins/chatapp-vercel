@@ -13,6 +13,7 @@
     "isolatedModules": true,
     "esModuleInterop": true,
     "jsx": "preserve",
+    "types": ["node"],
     "incremental": true,
     "baseUrl": ".",
     "paths": {
@@ -21,6 +22,6 @@
       "@/types/*": ["types/*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", "utils/pusher.ts"],
+  "include": ["custom.d.ts", "next-env.d.ts", "**/*.ts", "**/*.tsx", "utils/pusher.ts"],
   "exclude": ["node_modules"]
 }

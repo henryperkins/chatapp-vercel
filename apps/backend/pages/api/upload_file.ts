@@ -1,126 +1,124 @@
-// pages/api/upload_file.ts
 import type { NextApiRequest, NextApiResponse } from 'next';
 import formidable from 'formidable';
 import fs from 'fs';
 import { authenticate } from '@/utils/auth';
 import { AzureKeyCredential, DocumentAnalysisClient } from '@azure/ai-form-recognizer';
-import clientPromise from '@/utils/mongodb'; // Assuming you're using MongoDB
-import { errorHandler } from '@/middleware/errorHandler';
-import Papa from 'papaparse'; // Import for CSV parsing <--- This was missing
+import clientPromise from '@/utils/mongodb';
+import Papa from 'papaparse';
+import { analyzeFileContent } from '@/utils/azure';
+import { apiHandler } from '@/utils/apiHandler';
+import { AnalysisResult, ErrorResponse } from '../../../frontend/src/types';
 
 export const config = {
   api: {
-    bodyParser: false, // Disable Next.js default body parser
+    bodyParser: false,
   },
 };
 
-// Function to analyze the file using Azure Form Recognizer
-const analyzeFileWithFormRecognizer = async (file: formidable.File): Promise<any> => {
+const analyzeFileWithFormRecognizer = async (file: formidable.File): Promise<AnalysisResult> => {
   const endpoint = process.env.FORM_RECOGNIZER_ENDPOINT || '';
   const apiKey = process.env.FORM_RECOGNIZER_API_KEY || '';
+
+  if (!endpoint || !apiKey) {
+    throw { statusCode: 500, message: 'Form Recognizer configuration is missing.' };
+  }
 
   const credential = new AzureKeyCredential(apiKey);
   const client = new DocumentAnalysisClient(endpoint, credential);
 
-  // Convert the File object to a Blob
   const fileBuffer = fs.readFileSync(file.filepath);
   const fileBlob = new Blob([fileBuffer], { type: file.type });
 
   try {
-    // Determine the appropriate model and analysis logic based on file type
     const fileExtension = file.name.split('.').pop()?.toLowerCase();
 
     if (fileExtension === 'csv') {
-      // Parse CSV data using Papa Parse
       const csvText = await fileBlob.text();
       const parsedData = Papa.parse(csvText, { header: true }).data;
-      return { csvData: parsedData };
+      return { analysis: JSON.stringify({ csvData: parsedData }) };
     } else if (['txt', 'md', 'js', 'py'].includes(fileExtension || '')) {
-      // Handle text-based files (summarization, keyword extraction, etc.)
-      const textContent = await fileBlob.text();
-      // ... call Azure APIs for summarization, keyword extraction, etc. ...
-      return { textContent, /* ... analysis results ... */ };
+      const analysis = await analyzeFileContent(file.filepath);
+      return { analysis };
     } else {
-      // Analyze other document types using Form Recognizer
       const poller = await client.beginAnalyzeDocument('prebuilt-document', fileBlob);
       const result = await poller.pollUntilDone();
 
       if (!result) {
-        throw new Error('Failed to get analysis results from Form Recognizer.');
+        throw { statusCode: 500, message: 'Failed to get analysis results from Form Recognizer.' };
       }
 
-      // Extract relevant data based on document type
-      const extractedData = {
-        keyValuePairResults: result.keyValuePairResults,
-        tables: result.tables,
-        // ... add other extraction logic as needed ...
+      return {
+        analysis: JSON.stringify({
+          keyValuePairResults: result.keyValuePairResults,
+          tables: result.tables,
+        })
       };
-
-      return extractedData;
     }
   } catch (error: any) {
     console.error('Error analyzing file:', error);
-    throw new Error('Failed to analyze file.');
+    throw { statusCode: 500, message: `Failed to analyze file: ${error.message}` };
   }
 };
 
-const handler = async (req: NextApiRequest, res: NextApiResponse) => {
+const handler = async (req: NextApiRequest, res: NextApiResponse<AnalysisResult | ErrorResponse>) => {
   const user = authenticate(req, res);
-  if (!user) return;
+  if (!user) {
+    throw { statusCode: 401, message: 'Unauthorized: Invalid or missing authentication token.' };
+  }
 
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    res.status(405).json({ message: `Method ${req.method} Not Allowed` });
-    return;
+    throw { statusCode: 405, message: `Method ${req.method} Not Allowed. Use POST to upload files.` };
   }
 
   const form = new formidable.IncomingForm();
-  form.maxFileSize = parseFloat(process.env.MAX_FILE_SIZE_MB || '5') * 1024 * 1024; // Convert MB to bytes
+  form.maxFileSize = parseFloat(process.env.MAX_FILE_SIZE_MB || '5') * 1024 * 1024;
   form.keepExtensions = true;
 
-  form.parse(req, async (err, fields, files) => {
-    if (err) {
-      console.error('Formidable Error:', err);
-      res.status(400).json({ message: 'Error parsing the uploaded file.' });
-      return;
-    }
+  return new Promise((resolve, reject) => {
+    form.parse(req, async (err, fields, files) => {
+      if (err) {
+        console.error('Formidable Error:', err);
+        reject({ statusCode: 400, message: `Error parsing the uploaded file: ${err.message}` });
+        return;
+      }
 
-    const file = files.file as formidable.File;
-    if (!file) {
-      res.status(400).json({ message: 'No file uploaded.' });
-      return;
-    }
+      const file = files.file as formidable.File;
+      if (!file) {
+        reject({ statusCode: 400, message: 'No file uploaded. Please select a file to upload.' });
+        return;
+      }
 
-    const allowedExtensions = (process.env.ALLOWED_EXTENSIONS || 'txt,csv,docx,md,js,py,pdf').split(',').map(ext => ext.trim().toLowerCase());
-    const fileExtension = file.name.split('.').pop()?.toLowerCase();
+      const allowedExtensions = (process.env.ALLOWED_EXTENSIONS || 'txt,csv,docx,md,js,py,pdf').split(',').map(ext => ext.trim().toLowerCase());
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
 
-    if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
-      res.status(400).json({ message: `File type not allowed. Allowed types: ${allowedExtensions.join(', ')}` });
-      return;
-    }
+      if (!fileExtension || !allowedExtensions.includes(fileExtension)) {
+        reject({ statusCode: 400, message: `File type not allowed. Allowed types are: ${allowedExtensions.join(', ')}. Uploaded file type: ${fileExtension || 'unknown'}` });
+        return;
+      }
 
-    try {
-      const analysis = await analyzeFileWithFormRecognizer(file); // Analyze the file
+      try {
+        const analysis = await analyzeFileWithFormRecognizer(file);
 
-      // Store file and analysis in the database (optional)
-      const client = await clientPromise;
-      const db = client.db(process.env.MONGODB_DB_NAME);
-      const uploads = db.collection('uploads');
+        const client = await clientPromise;
+        const db = client.db(process.env.MONGODB_DB_NAME);
+        const uploads = db.collection('uploads');
 
-      await uploads.insertOne({
-        user_id: user.id,
-        filename: file.name,
-        filepath: file.filepath, // Or store the file content in the database
-        analysis,
-        uploaded_at: new Date(),
-      });
+        await uploads.insertOne({
+          user_id: user.id,
+          filename: file.name,
+          filepath: file.filepath,
+          analysis,
+          uploaded_at: new Date(),
+        });
 
-      res.status(200).json({ message: 'File uploaded and analyzed successfully.', analysis });
-    } catch (error: any) {
-      console.error('Upload File Error:', error);
-      res.status(500).json({ message: error.message || 'Failed to upload and analyze the file.' });
-    }
+        res.status(200).json({ analysis: `File uploaded and analyzed successfully. ${analysis.analysis}` });
+        resolve();
+      } catch (error: any) {
+        console.error('Upload File Error:', error);
+        reject({ statusCode: 500, message: `Failed to upload and analyze the file: ${error.message}` });
+      }
+    });
   });
 };
 
-export default errorHandler(handler);
+export default apiHandler(handler);

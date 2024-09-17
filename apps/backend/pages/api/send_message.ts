@@ -3,24 +3,22 @@ import { authenticate } from '@/utils/auth';
 import clientPromise from '@/utils/mongodb';
 import { getAzureResponse, countTokens, manageContextWindow } from '@/utils/azure';
 import { PusherInstance } from '@/utils/pusher';
-import { errorHandler } from '@/middleware/errorHandler';
+import { apiHandler } from '@/utils/apiHandler';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const user = authenticate(req, res);
-  if (!user) return;
+  if (!user) {
+    throw { statusCode: 401, message: 'Unauthorized: Invalid or missing authentication token.' };
+  }
 
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    res.status(405).end(`Method ${req.method} Not Allowed`);
-    return;
+    throw { statusCode: 405, message: `Method ${req.method} Not Allowed. Use POST to send messages.` };
   }
 
   const { conversation_id, message } = req.body;
 
   if (!conversation_id || !message) {
-    const error = new Error('Conversation ID and message are required.');
-    (error as any).status = 400;
-    throw error;
+    throw { statusCode: 400, message: 'Bad Request: Conversation ID and message are required.' };
   }
 
   try {
@@ -35,9 +33,7 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     });
 
     if (!conversation) {
-      const error = new Error('Conversation not found.');
-      (error as any).status = 404;
-      throw error;
+      throw { statusCode: 404, message: 'Not Found: The specified conversation does not exist or you do not have access to it.' };
     }
 
     // Retrieve few-shot examples
@@ -95,10 +91,14 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     });
 
     res.status(200).json({ message: 'Message sent successfully.' });
-  } catch (error) {
-    console.error('Error in send_message handler:', error);
-    throw error; // Let the errorHandler handle the error
+  } catch (error: any) {
+    console.error('Send Message Error:', error);
+    if (error.statusCode) {
+      throw error;
+    } else {
+      throw { statusCode: 500, message: `Internal Server Error: ${error.message || 'An unexpected error occurred while sending the message.'}` };
+    }
   }
 };
 
-export default errorHandler(handler);
+export default apiHandler(handler);

@@ -2,27 +2,25 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authenticate } from '@/utils/auth';
+import { apiHandler } from '@/utils/apiHandler';
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const user = authenticate(req, res);
-  if (!user) return;
+  if (!user) {
+    throw { statusCode: 401, message: 'Unauthorized' };
+  }
 
   if (req.method !== 'GET') {
-    res.setHeader('Allow', 'GET');
-    res.status(405).end(`Method ${req.method} Not Allowed`);
-    return;
+    throw { statusCode: 405, message: `Method ${req.method} Not Allowed` };
   }
 
-  try {
-    const config = {
-      max_tokens: process.env.MAX_TOKENS || '128000',
-      reply_tokens: process.env.REPLY_TOKENS || '800',
-      chunk_size_tokens: process.env.CHUNK_SIZE_TOKENS || '1000',
-    };
+  const config = {
+    max_tokens: process.env.MAX_TOKENS || '128000',
+    reply_tokens: process.env.REPLY_TOKENS || '800',
+    chunk_size_tokens: process.env.CHUNK_SIZE_TOKENS || '1000',
+  };
 
-    res.status(200).json({ config });
-  } catch (error: any) {
-    console.error('Error getting config:', error);
-    res.status(500).json({ message: 'An error occurred.', error: error.message });
-  }
-}
+  res.status(200).json({ config });
+};
+
+export default apiHandler(handler);

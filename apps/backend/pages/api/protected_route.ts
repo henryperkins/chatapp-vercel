@@ -1,16 +1,15 @@
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { authenticate } from '@/utils/auth';
-import { errorHandler } from '@/middleware/errorHandler';
+import { NextApiRequest, NextApiResponse } from 'next';
+import { authenticate } from '@/middleware/auth';
+import { apiHandler } from '@/utils/apiHandler';
 
 interface ProtectedRouteResponse {
   message: string;
 }
 
-const handler = async (_req: NextApiRequest, res: NextApiResponse<ProtectedRouteResponse>) => {
-  const user = authenticate(_req, res);
-  if (!user) return;
-
-  res.status(200).json({ message: 'Authenticated' });
+const handler = async (req: NextApiRequest, res: NextApiResponse<ProtectedRouteResponse>) => {
+  authenticate(req, res, () => {
+    res.status(200).json({ message: 'You have access to this protected route' });
+  });
 };
 
-export default errorHandler(handler);
+export default apiHandler(handler);

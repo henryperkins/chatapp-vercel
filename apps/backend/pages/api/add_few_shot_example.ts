@@ -3,7 +3,7 @@
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authenticate } from '@/utils/auth';
 import clientPromise from '@/utils/mongodb';
-import { errorHandler } from '@/middleware/errorHandler';
+import { apiHandler } from '@/utils/apiHandler';
 
 interface AddFewShotRequest extends NextApiRequest {
   body: {
@@ -14,20 +14,18 @@ interface AddFewShotRequest extends NextApiRequest {
 
 const handler = async (req: AddFewShotRequest, res: NextApiResponse) => {
   const user = authenticate(req, res);
-  if (!user) return;
+  if (!user) {
+    throw { statusCode: 401, message: 'Unauthorized' };
+  }
 
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    res.status(405).end(`Method ${req.method} Not Allowed`);
-    return;
+    throw { statusCode: 405, message: `Method ${req.method} Not Allowed` };
   }
 
   const { user_prompt, assistant_response } = req.body;
 
   if (!user_prompt || !assistant_response) {
-    const error = new Error('User prompt and assistant response are required.');
-    (error as any).status = 400;
-    throw error;
+    throw { statusCode: 400, message: 'User prompt and assistant response are required.' };
   }
 
   const client = await clientPromise;
@@ -44,4 +42,4 @@ const handler = async (req: AddFewShotRequest, res: NextApiResponse) => {
   res.status(200).json({ message: 'Few-shot example added successfully.' });
 };
 
-export default errorHandler(handler);
+export default apiHandler(handler);

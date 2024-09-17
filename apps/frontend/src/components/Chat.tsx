@@ -5,29 +5,28 @@ import 'notyf/notyf.min.css';
 import './Chat.css';
 import fetchWithAuth from '../utils/fetchWithAuth';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faBars, faPlus, faRedo, faPaperPlane, faHistory } from '@fortawesome/free-solid-svg-icons';
+import { faBars, faPlus, faRedo, faPaperPlane, faHistory, faUpload, faLightbulb, faSearch } from '@fortawesome/free-solid-svg-icons';
 import ConversationList from './ConversationList';
 import { ConversationContext } from '../contexts/ConversationContext';
-import { countTokens } from '../utils/azure'; // Import countTokens
-
-interface Message {
-  role: 'user' | 'assistant';
-  content: string;
-}
+import { countTokens } from '../utils/azure';
+import FileUploadForm from './FileUploadForm';
+import FewShotForm from './FewShotForm';
+import SearchForm from './SearchForm';
+import { Message, AnalysisResult, ErrorResponse } from '../types';
 
 const notyf = new Notyf();
 
 const Chat: React.FC = () => {
-  const { conversationId, setConversationId } = useContext(ConversationContext);
-  const [messages, setMessages] = useState<Message[]>([]);
+  const { conversationId, setConversationId, messages, setMessages, totalTokensUsed, setTotalTokensUsed } = useContext(ConversationContext);
   const [userMessage, setUserMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [totalTokensUsed, setTotalTokensUsed] = useState(0);
   const [temperature, setTemperature] = useState(0.7);
   const [topP, setTopP] = useState(1);
   const [maxTokens, setMaxTokens] = useState(1000);
-  const maxContextTokens = 4000; // Adjust based on your model
+  const [activeFeature, setActiveFeature] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const maxContextTokens = 4000;
   const chatHistoryRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -42,17 +41,15 @@ const Chat: React.FC = () => {
   useEffect(() => {
     if (!conversationId) return;
 
-    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
+    const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
+      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
     });
 
     const channel = pusher.subscribe('chat-channel');
-    channel.bind('new-message', (data: any) => {
-      if (data.conversation_id === conversationId) {
-        setMessages((prevMessages) => [...prevMessages, { role: data.role, content: data.content }]);
+    channel.bind('new-message', (data: Message) => {
+      if (data.id === conversationId) {
+        setMessages((prevMessages) => [...prevMessages, data]);
         setIsTyping(false);
-
-        // Update total tokens used
         setTotalTokensUsed((prevTokens) => prevTokens + countTokens(data.content));
       }
     });
@@ -61,7 +58,7 @@ const Chat: React.FC = () => {
       pusher.unsubscribe('chat-channel');
       pusher.disconnect();
     };
-  }, [conversationId]);
+  }, [conversationId, setMessages, setTotalTokensUsed]);
 
   useEffect(() => {
     if (chatHistoryRef.current) {
@@ -79,15 +76,22 @@ const Chat: React.FC = () => {
     const message = userMessage.trim();
     const newMessageTokens = countTokens(message);
 
-    // Check if adding the new message would exceed the context window limit
     if (totalTokensUsed + newMessageTokens > maxContextTokens) {
-      notyf.error('Message exceeds context window limit. Please start a new conversation.');
+      setError(`Message exceeds context window limit (${maxContextTokens} tokens). Please start a new conversation.`);
       return;
     }
 
-    setMessages((prevMessages) => [...prevMessages, { role: 'user', content: message }]);
+    const newMessage: Message = {
+      id: conversationId,
+      sender: 'user',
+      content: message,
+      timestamp: Date.now()
+    };
+
+    setMessages((prevMessages) => [...prevMessages, newMessage]);
     setUserMessage('');
     setIsTyping(true);
+    setError(null);
 
     try {
       const response = await fetchWithAuth('/api/send_message', {
@@ -98,35 +102,43 @@ const Chat: React.FC = () => {
         body: JSON.stringify({ 
           conversation_id: conversationId, 
           message,
-          temperature, // Send model parameters to the backend
+          temperature,
           top_p: topP,
           max_tokens: maxTokens,
         }),
       });
 
-      if (response.message === 'Message sent successfully.') {
-        // Assistant's response and token update will be handled via Pusher
+      const data: AnalysisResult | ErrorResponse = await response.json();
+
+      if (response.ok) {
         setTotalTokensUsed((prevTokens) => prevTokens + newMessageTokens);
       } else {
-        notyf.error(response.message || 'Failed to send message.');
+        setError((data as ErrorResponse).error || 'Failed to send message. Please try again.');
         setIsTyping(false);
       }
     } catch (error: any) {
-      notyf.error(error.message || 'Failed to send message.');
+      setError(error.message || 'An unexpected error occurred. Please try again.');
       setIsTyping(false);
     }
   };
 
   const startNewConversation = async () => {
     try {
-      const data = await fetchWithAuth('/api/start_conversation', { method: 'POST' });
-      setConversationId(data.conversation_id);
-      setMessages([]);
-      setTotalTokensUsed(0); // Reset token count for new conversation
-      notyf.success('Started a new conversation.');
-      setIsSidebarOpen(false);
+      const response = await fetchWithAuth('/api/start_conversation', { method: 'POST' });
+      const data: { conversation_id: string } | ErrorResponse = await response.json();
+
+      if (response.ok && 'conversation_id' in data) {
+        setConversationId(data.conversation_id);
+        setMessages([]);
+        setTotalTokensUsed(0);
+        notyf.success('Started a new conversation.');
+        setIsSidebarOpen(false);
+        setError(null);
+      } else {
+        setError((data as ErrorResponse).error || 'Failed to start a new conversation. Please try again.');
+      }
     } catch (error: any) {
-      notyf.error(error.message || 'Failed to start a new conversation.');
+      setError(error.message || 'An unexpected error occurred while starting a new conversation.');
     }
   };
 
@@ -136,31 +148,43 @@ const Chat: React.FC = () => {
     try {
       const response = await fetchWithAuth('/api/reset_conversation', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({ conversation_id: conversationId }),
       });
 
-      if (response.message === 'Conversation reset successfully.') {
+      const data: AnalysisResult | ErrorResponse = await response.json();
+
+      if (response.ok) {
         setMessages([]);
-        setTotalTokensUsed(0); // Reset token count
+        setTotalTokensUsed(0);
         notyf.success('Conversation has been reset.');
+        setError(null);
       } else {
-        notyf.error(response.message || 'Failed to reset conversation.');
+        setError((data as ErrorResponse).error || 'Failed to reset conversation. Please try again.');
       }
     } catch (error: any) {
-      notyf.error(error.message || 'Failed to reset conversation.');
+      setError(error.message || 'An unexpected error occurred while resetting the conversation.');
     }
   };
 
   const loadConversation = async (convId: string) => {
     try {
-      const data = await fetchWithAuth(`/api/load_conversation/${convId}`, { method: 'GET' });
-      setMessages(data.conversation);
-      // Calculate and update total tokens used for the loaded conversation
-      setTotalTokensUsed(data.conversation.reduce((total, msg) => total + countTokens(msg.content), 0));
-      notyf.success('Conversation loaded.');
-      setIsSidebarOpen(false);
+      const response = await fetchWithAuth(`/api/load_conversation/${convId}`, { method: 'GET' });
+      const data: { conversation: Message[] } | ErrorResponse = await response.json();
+
+      if (response.ok && 'conversation' in data) {
+        setMessages(data.conversation);
+        setTotalTokensUsed(data.conversation.reduce((total, msg) => total + countTokens(msg.content), 0));
+        notyf.success('Conversation loaded.');
+        setIsSidebarOpen(false);
+        setError(null);
+      } else {
+        setError((data as ErrorResponse).error || 'Failed to load conversation. Please try again.');
+      }
     } catch (error: any) {
-      notyf.error(error.message || 'Failed to load conversation.');
+      setError(error.message || 'An unexpected error occurred while loading the conversation.');
     }
   };
 
@@ -175,16 +199,26 @@ const Chat: React.FC = () => {
     }
   };
 
+  const renderActiveFeature = () => {
+    switch (activeFeature) {
+      case 'fileUpload':
+        return <FileUploadForm />;
+      case 'fewShot':
+        return <FewShotForm />;
+      case 'search':
+        return <SearchForm />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className={`chat-page ${isSidebarOpen ? 'sidebar-open' : ''}`}>
-      {/* Sidebar for Conversation List */}
       <aside className={`conversation-sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <ConversationList />
       </aside>
 
-      {/* Main Chat Area */}
       <main className="chat-main">
-        {/* Header */}
         <header className="chat-header">
           <h1>Chatbot</h1>
           <nav className="chat-nav">
@@ -203,92 +237,105 @@ const Chat: React.FC = () => {
           </nav>
         </header>
 
-        {/* Conversation Area */}
         <div className="chat-container">
-          <div className="chat-history" ref={chatHistoryRef}>
-            {messages.map((msg, index) => (
-              <div key={index} className={`message ${msg.role}`}>
-                <div className="message-content">{msg.content}</div>
-              </div>
-            ))}
-            {isTyping && (
-              <div className="message assistant">
-                <div className="message-content typing-indicator">
-                  <span></span>
-                  <span></span>
-                  <span></span>
+          <div className="chat-content">
+            <div className="chat-history" ref={chatHistoryRef}>
+              {messages.map((msg, index) => (
+                <div key={index} className={`message ${msg.sender}`}>
+                  <div className="message-content">{msg.content}</div>
+                </div>
+              ))}
+              {isTyping && (
+                <div className="message bot">
+                  <div className="message-content typing-indicator">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="message-input">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  sendMessage();
+                }}
+              >
+                <textarea
+                  value={userMessage}
+                  onChange={handleInput}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Type your message and press Enter..."
+                  className="message-input-field"
+                  rows={1}
+                  aria-label="Message Input"
+                />
+                <button type="submit" className="send-button" aria-label="Send Message">
+                  <FontAwesomeIcon icon={faPaperPlane} />
+                </button>
+              </form>
+
+              {error && <div className="error-message">{error}</div>}
+
+              <div className="model-params">
+                <div>
+                  <label htmlFor="temperature">Temperature ({temperature.toFixed(1)}):</label>
+                  <input
+                    type="range"
+                    id="temperature"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={temperature}
+                    onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="topP">Top P ({topP.toFixed(1)}):</label>
+                  <input
+                    type="range"
+                    id="topP"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    value={topP}
+                    onChange={(e) => setTopP(parseFloat(e.target.value))}
+                  />
+                </div>
+                <div>
+                  <label htmlFor="maxTokens">Max Tokens ({maxTokens}):</label>
+                  <input
+                    type="number"
+                    id="maxTokens"
+                    min="1"
+                    max="4000"
+                    value={maxTokens}
+                    onChange={(e) => setMaxTokens(parseInt(e.target.value, 10) || 1)}
+                  />
                 </div>
               </div>
-            )}
-          </div>
 
-          {/* Message Input Area */}
-          <div className="message-input">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                sendMessage();
-              }}
-            >
-              <textarea
-                value={userMessage}
-                onChange={handleInput}
-                onKeyDown={handleKeyDown}
-                placeholder="Type your message and press Enter..."
-                className="message-input-field"
-                rows={1}
-                aria-label="Message Input"
-              />
-              <button type="submit" className="send-button" aria-label="Send Message">
-                <FontAwesomeIcon icon={faPaperPlane} />
-              </button>
-            </form>
-
-            {/* Model Parameter Controls */}
-            <div className="model-params">
-              <div>
-                <label htmlFor="temperature">Temperature ({temperature.toFixed(1)}):</label>
-                <input
-                  type="range"
-                  id="temperature"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={temperature}
-                  onChange={(e) => setTemperature(parseFloat(e.target.value))}
-                />
-              </div>
-              {/* Add similar controls for top_p and max_tokens */}
-              <div>
-                <label htmlFor="topP">Top P ({topP.toFixed(1)}):</label>
-                <input
-                  type="range"
-                  id="topP"
-                  min="0"
-                  max="1"
-                  step="0.1"
-                  value={topP}
-                  onChange={(e) => setTopP(parseFloat(e.target.value))}
-                />
-              </div>
-              <div>
-                <label htmlFor="maxTokens">Max Tokens ({maxTokens}):</label>
-                <input
-                  type="number"
-                  id="maxTokens"
-                  min="1"
-                  max="4000" // Adjust based on your model
-                  value={maxTokens}
-                  onChange={(e) => setMaxTokens(parseInt(e.target.value, 10) || 1)}
-                />
+              <div className="token-usage">
+                Tokens Used: {totalTokensUsed} / {maxContextTokens}
               </div>
             </div>
-
-            {/* Token Usage Display */}
-            <div className="token-usage">
-              Tokens Used: {totalTokensUsed} / {maxContextTokens}
-            </div>
           </div>
+
+          <div className="feature-sidebar">
+            <button onClick={() => setActiveFeature('fileUpload')} title="File Upload" aria-label="File Upload">
+              <FontAwesomeIcon icon={faUpload} />
+            </button>
+            <button onClick={() => setActiveFeature('fewShot')} title="Few-Shot Learning" aria-label="Few-Shot Learning">
+              <FontAwesomeIcon icon={faLightbulb} />
+            </button>
+            <button onClick={() => setActiveFeature('search')} title="Search" aria-label="Search">
+              <FontAwesomeIcon icon={faSearch} />
+            </button>
+          </div>
+
+          {renderActiveFeature()}
         </div>
       </main>
     </div>

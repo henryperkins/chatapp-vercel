@@ -36,7 +36,7 @@ const LoginPage: React.FC = () => {
 
       if (response.ok) {
         notyf.success('Logged in successfully.');
-        router.push('/'); // Redirect to home or chat page
+        router.push('/chat'); // Redirect to chat page
       } else {
         notyf.error(data.message || 'Login failed.');
       }

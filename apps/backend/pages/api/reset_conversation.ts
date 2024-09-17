@@ -1,46 +1,33 @@
-// File: apps/backend/pages/api/reset_conversation.ts
+import { NextApiRequest, NextApiResponse } from 'next';
+import { connectToDatabase } from '../../utils/mongodb';
+import { ObjectId } from 'mongodb';
+import { apiHandler } from '../../utils/apiHandler';
 
-import type { NextApiRequest, NextApiResponse } from 'next';
-import { authenticate } from '@/utils/auth';
-import { resetConversation } from '@/utils/conversation'; // Import the consolidated function
-import { errorHandler } from '@/middleware/errorHandler';
-
-interface ResetConversationResponse {
-  message: string;
-}
-
-const handler = async (req: NextApiRequest, res: NextApiResponse<ResetConversationResponse>) => {
-  const user = authenticate(req, res);
-  if (!user) return;
-
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    res.status(405).json({ message: `Method ${req.method} Not Allowed` });
-    return;
+    throw { statusCode: 405, message: 'Method not allowed' };
   }
 
   const { conversation_id } = req.body;
 
   if (!conversation_id) {
-    const error = new Error('Conversation ID is required.');
-    (error as any).status = 400;
-    throw error;
+    throw { statusCode: 400, message: 'Conversation ID is required' };
   }
 
-  try {
-    const success = await resetConversation(conversation_id, user.id); // Use the consolidated function
+  const { db } = await connectToDatabase();
+  const conversationsCollection = db.collection('conversations');
 
-    if (success) {
-      res.status(200).json({ message: 'Conversation reset successfully.' });
-    } else {
-      const error = new Error('Conversation not found.');
-      (error as any).status = 404;
-      throw error;
-    }
-  } catch (error) {
-    // Let the errorHandler handle any errors from resetConversation
-    throw error;
+  // Find the conversation and reset its messages
+  const result = await conversationsCollection.updateOne(
+    { _id: new ObjectId(conversation_id) },
+    { $set: { messages: [] } }
+  );
+
+  if (result.modifiedCount === 0) {
+    throw { statusCode: 404, message: 'Conversation not found' };
   }
+
+  res.status(200).json({ message: 'Conversation reset successfully' });
 };
 
-export default errorHandler(handler);
+export default apiHandler(handler);

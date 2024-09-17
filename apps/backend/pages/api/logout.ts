@@ -1,13 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 import { removeTokenCookie } from '@/utils/auth';
+import { apiHandler } from '@/utils/apiHandler';
 
-export default function handler(req: NextApiRequest, res: NextApiResponse) {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   if (req.method !== 'POST') {
-    res.setHeader('Allow', 'POST');
-    res.status(405).json({ message: `Method ${req.method} Not Allowed` });
-    return;
+    throw { statusCode: 405, message: `Method ${req.method} Not Allowed` };
   }
 
   removeTokenCookie(res);
   res.status(200).json({ message: 'Logged out successfully.' });
-}
+};
+
+export default apiHandler(handler);

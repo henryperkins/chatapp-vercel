@@ -1,6 +1,6 @@
 // File: apps/frontend/src/utils/fetchWithAuth.ts
 
-import { API_BASE_URL } from './config';
+import config from '../config';
 import { getToken } from './auth';
 
 export const fetchWithAuth = async <T = any>(url: string, options: RequestInit = {}): Promise<T> => {
@@ -11,7 +11,7 @@ export const fetchWithAuth = async <T = any>(url: string, options: RequestInit =
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  const response = await fetch(`${API_BASE_URL}${url}`, {
+  const response = await fetch(`${config.API_BASE_URL}${url}`, {
     ...options,
     headers: {
       ...headers,

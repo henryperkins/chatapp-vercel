@@ -1,5 +1,7 @@
-// apps/backend/utils/azure.ts
 import { Configuration, OpenAIApi } from 'openai';
+import { OpenAIClient, AzureKeyCredential } from '@azure/openai';
+import fs from 'fs';
+import path from 'path';
 
 // Configure the OpenAI API client
 const configuration = new Configuration({
@@ -8,55 +10,82 @@ const configuration = new Configuration({
 });
 const openai = new OpenAIApi(configuration);
 
+// Configure the Azure OpenAI client
+const endpoint = process.env.AZURE_OPENAI_ENDPOINT!;
+const apiKey = process.env.AZURE_OPENAI_API_KEY!;
+const client = new OpenAIClient(endpoint, new AzureKeyCredential(apiKey));
+
+interface ChatMessage {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
 // Function to get a chat completion from Azure OpenAI
 export const getAzureResponse = async (
-  messages: any[], // Array of message objects (role: 'user' or 'assistant', content: 'message text')
-  max_tokens: number = 1000, // Maximum number of tokens to generate
-  temperature: number = 0.7, // Controls the randomness of the response (0.0 - 1.0)
-  top_p: number = 1 // Controls the diversity of the response (0.0 - 1.0)
+  messages: ChatMessage[],
+  max_tokens: number = 1000,
+  temperature: number = 0.7,
+  top_p: number = 1
 ): Promise<string> => {
   try {
     const response = await openai.createChatCompletion({
-      model: process.env.AZURE_DEPLOYMENT_NAME || '', // Use the deployment name from environment variables
+      model: process.env.AZURE_DEPLOYMENT_NAME || '',
       messages,
       max_tokens,
       temperature,
-      top_p, // Include top_p in the request
-      // Add other parameters as needed (e.g., presence_penalty, frequency_penalty)
+      top_p,
     });
 
-    // Extract and return the assistant's response
     return response.data.choices[0].message?.content || ''; 
   } catch (error) {
     console.error('Error getting response from Azure:', error);
-    throw error; // Re-throw the error to be handled at a higher level
+    throw error;
   }
 };
 
 // Function to count tokens (using a simple approximation for now)
 export const countTokens = (text: string): number => {
-  // You can use a more accurate token counting library if needed
-  // For now, we'll approximate 1 token per word
   return text.split(/\s+/).length; 
 };
 
 // Function to manage the context window (basic implementation)
-export const manageContextWindow = (messages: any[], maxTokens: number): any[] => {
+export const manageContextWindow = (messages: ChatMessage[], maxTokens: number): ChatMessage[] => {
   let totalTokens = 0;
-  const contextWindow: any[] = [];
+  const contextWindow: ChatMessage[] = [];
 
-  // Iterate through messages in reverse order (newest to oldest)
   for (let i = messages.length - 1; i >= 0; i--) {
     const message = messages[i];
     const messageTokens = countTokens(message.content);
 
     if (totalTokens + messageTokens <= maxTokens) {
-      contextWindow.unshift(message); // Add message to the beginning of the context window
+      contextWindow.unshift(message);
       totalTokens += messageTokens;
     } else {
-      break; // Stop adding messages if the context window is full
+      break;
     }
   }
 
   return contextWindow;
 };
+
+// Function to analyze file content
+export async function analyzeFileContent(filePath: string): Promise<string> {
+  try {
+    const absolutePath = path.resolve(filePath);
+    const fileContent = fs.readFileSync(absolutePath, 'utf-8');
+
+    const prompt = `Analyze the following content:\n\n${fileContent}`;
+
+    const deploymentName = process.env.AZURE_DEPLOYMENT_NAME || '';
+    const result = await client.getCompletions(deploymentName, prompt, {
+      maxTokens: 150,
+      temperature: 0.7,
+    });
+
+    const analysis = result.choices[0].text.trim();
+    return analysis;
+  } catch (error) {
+    console.error('Error in analyzeFileContent:', error);
+    throw new Error('Failed to analyze file content');
+  }
+}

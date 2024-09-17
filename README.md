@@ -13,6 +13,7 @@
 - **File Analysis:**  Enable users to upload files for analysis (implementation details can be customized).
 - **Conversation Search:** Allow users to easily search through past conversations.
 - **Easy Deployment:** Deploy effortlessly to Vercel with automatic build and deployment processes.
+- **Centralized Error Handling:** Implement consistent error handling across all API routes for improved reliability and debugging.
 
 ## Screenshots
 
@@ -43,7 +44,7 @@ npm install
 **3. Set up environment variables:**
 
 - Create a `.env.local` file in both the `apps/frontend` and `apps/backend` directories.
-- Add the necessary environment variables (see the "Environment Variables" section below).
+- Copy the contents of the respective `.env.example` files and fill in your actual values.
 
 **4. Run the development server:**
 
@@ -69,30 +70,44 @@ This project is configured for deployment on Vercel.
 2. **Vercel will automatically detect the pushed changes and start the deployment process.**
 3. **Ensure all necessary environment variables are set in the Vercel project settings.**
 
-## Environment Variables
+## Environment Setup
 
-### Frontend (.env.local in apps/frontend)
+1. **Backend Configuration**
 
-- `NEXT_PUBLIC_API_BASE_URL`: URL of the backend API
-- `NEXT_PUBLIC_PUSHER_KEY`: Pusher public key
-- `NEXT_PUBLIC_PUSHER_CLUSTER`: Pusher cluster
+   - Create a `.env.local` file in the root directory of the backend (`apps/backend`).
+   - Copy the contents of `.env.example` and fill in your actual values.
 
-### Backend (.env.local in apps/backend)
+2. **Frontend Configuration**
 
-- `AZURE_API_URL`: Base URL for Azure OpenAI Service
-- `AZURE_API_KEY`: API key for Azure OpenAI Service
-- `AZURE_DEPLOYMENT_NAME`: Deployment name for Azure OpenAI Service
-- `MONGODB_URI`: MongoDB connection string
-- `MONGODB_DB_NAME`: Name of the MongoDB database
-- `JWT_SECRET`: Secret for JWT signing (if using authentication)
-- `PUSHER_APP_ID`: Pusher app ID
-- `PUSHER_KEY`: Pusher key
-- `PUSHER_SECRET`: Pusher secret
-- `PUSHER_CLUSTER`: Pusher cluster
-- `MAX_FILE_SIZE_MB`: Maximum allowed file size for uploads (in MB)
-- `ALLOWED_EXTENSIONS`: Comma-separated list of allowed file extensions for uploads
+   - Create a `.env.local` file in the root directory of the frontend (`apps/frontend`).
+   - Copy the contents of `.env.example` and fill in your actual values.
 
-**Note:** Ensure these environment variables are also set in your Vercel project settings for production deployment.
+**Environment Variables Description**
+
+- `AZURE_OPENAI_ENDPOINT`: The endpoint URL for your Azure OpenAI resource.
+- `AZURE_OPENAI_API_KEY`: The API key for accessing Azure OpenAI services.
+- `JWT_SECRET`: Secret key used for signing JWT tokens (keep this secure).
+- `PUSHER_APP_ID`, `PUSHER_KEY`, `PUSHER_SECRET`, `PUSHER_CLUSTER`: Credentials for Pusher real-time communication.
+- `DATABASE_URL`: Connection string for your database (if applicable).
+- `NEXT_PUBLIC_API_BASE_URL`: Base URL for the backend API.
+- `NEXT_PUBLIC_PUSHER_KEY`: Pusher public key for the frontend.
+- `NEXT_PUBLIC_PUSHER_CLUSTER`: Pusher cluster for the frontend.
+
+## Error Handling
+
+The backend implements a centralized error handling mechanism using the `apiHandler` utility. This ensures consistent error responses across all API routes and simplifies error management.
+
+Key features of the error handling system:
+- Wraps all API route handlers to catch and process errors uniformly.
+- Automatically sends appropriate HTTP status codes and error messages.
+- Logs errors for debugging purposes.
+
+To throw an error in an API route, use the following format:
+```javascript
+throw { statusCode: 400, message: 'Error message here' };
+```
+
+The `apiHandler` will catch this error and send a properly formatted response to the client.
 
 ## Contributing
 
@@ -104,4 +119,4 @@ This project is configured for deployment on Vercel.
 
 ## License
 
-This project is licensed under the MIT License. 
+This project is licensed under the MIT License.
