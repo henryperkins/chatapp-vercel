@@ -2,7 +2,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authenticate } from '@/utils/auth';
-import clientPromise from '@/utils/mongodb';
+import { resetConversation } from '@/utils/conversation'; // Import the consolidated function
 import { errorHandler } from '@/middleware/errorHandler';
 
 interface ResetConversationResponse {
@@ -28,30 +28,17 @@ const handler = async (req: NextApiRequest, res: NextApiResponse<ResetConversati
   }
 
   try {
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB_NAME);
-    const conversations = db.collection('conversations');
+    const success = await resetConversation(conversation_id, user.id); // Use the consolidated function
 
-    const conversation = await conversations.findOne({
-      conversation_id,
-      user_id: user.id,
-    });
-
-    if (!conversation) {
+    if (success) {
+      res.status(200).json({ message: 'Conversation reset successfully.' });
+    } else {
       const error = new Error('Conversation not found.');
       (error as any).status = 404;
       throw error;
     }
-
-    // Reset the conversation by clearing messages
-    await conversations.updateOne(
-      { conversation_id },
-      { $set: { messages: [], updated_at: new Date() } }
-    );
-
-    res.status(200).json({ message: 'Conversation reset successfully.' });
-  } catch (error: any) {
-    console.error('Reset Conversation Error:', error);
+  } catch (error) {
+    // Let the errorHandler handle any errors from resetConversation
     throw error;
   }
 };
