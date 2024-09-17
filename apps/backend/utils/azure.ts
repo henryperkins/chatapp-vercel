@@ -12,7 +12,8 @@ const openai = new OpenAIApi(configuration);
 export const getAzureResponse = async (
   messages: any[], // Array of message objects (role: 'user' or 'assistant', content: 'message text')
   max_tokens: number = 1000, // Maximum number of tokens to generate
-  temperature: number = 0.7 // Controls the randomness of the response (0.0 - 1.0)
+  temperature: number = 0.7, // Controls the randomness of the response (0.0 - 1.0)
+  top_p: number = 1 // Controls the diversity of the response (0.0 - 1.0)
 ): Promise<string> => {
   try {
     const response = await openai.createChatCompletion({
@@ -20,7 +21,8 @@ export const getAzureResponse = async (
       messages,
       max_tokens,
       temperature,
-      // Add other parameters as needed (e.g., top_p, presence_penalty, frequency_penalty)
+      top_p, // Include top_p in the request
+      // Add other parameters as needed (e.g., presence_penalty, frequency_penalty)
     });
 
     // Extract and return the assistant's response
