@@ -8,6 +8,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBars, faPlus, faRedo, faPaperPlane, faHistory } from '@fortawesome/free-solid-svg-icons';
 import ConversationList from './ConversationList';
 import { ConversationContext } from '../contexts/ConversationContext';
+import { countTokens } from '../utils/azure'; // Import countTokens
 
 interface Message {
   role: 'user' | 'assistant';
@@ -22,6 +23,11 @@ const Chat: React.FC = () => {
   const [userMessage, setUserMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [totalTokensUsed, setTotalTokensUsed] = useState(0);
+  const [temperature, setTemperature] = useState(0.7);
+  const [topP, setTopP] = useState(1);
+  const [maxTokens, setMaxTokens] = useState(1000);
+  const maxContextTokens = 4000; // Adjust based on your model
   const chatHistoryRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -31,13 +37,11 @@ const Chat: React.FC = () => {
     } else {
       loadConversation(conversationId);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [conversationId]);
 
   useEffect(() => {
     if (!conversationId) return;
 
-    // Setup Pusher for real-time updates
     const pusher = new Pusher(process.env.NEXT_PUBLIC_PUSHER_KEY || '', {
       cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER || '',
     });
@@ -47,6 +51,9 @@ const Chat: React.FC = () => {
       if (data.conversation_id === conversationId) {
         setMessages((prevMessages) => [...prevMessages, { role: data.role, content: data.content }]);
         setIsTyping(false);
+
+        // Update total tokens used
+        setTotalTokensUsed((prevTokens) => prevTokens + countTokens(data.content));
       }
     });
 
@@ -57,7 +64,6 @@ const Chat: React.FC = () => {
   }, [conversationId]);
 
   useEffect(() => {
-    // Scroll to the bottom when messages update
     if (chatHistoryRef.current) {
       chatHistoryRef.current.scrollTop = chatHistoryRef.current.scrollHeight;
     }
@@ -71,6 +77,14 @@ const Chat: React.FC = () => {
     if (!userMessage.trim() || !conversationId) return;
 
     const message = userMessage.trim();
+    const newMessageTokens = countTokens(message);
+
+    // Check if adding the new message would exceed the context window limit
+    if (totalTokensUsed + newMessageTokens > maxContextTokens) {
+      notyf.error('Message exceeds context window limit. Please start a new conversation.');
+      return;
+    }
+
     setMessages((prevMessages) => [...prevMessages, { role: 'user', content: message }]);
     setUserMessage('');
     setIsTyping(true);
@@ -78,11 +92,21 @@ const Chat: React.FC = () => {
     try {
       const response = await fetchWithAuth('/api/send_message', {
         method: 'POST',
-        body: JSON.stringify({ conversation_id: conversationId, message }),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          conversation_id: conversationId, 
+          message,
+          temperature, // Send model parameters to the backend
+          top_p: topP,
+          max_tokens: maxTokens,
+        }),
       });
 
       if (response.message === 'Message sent successfully.') {
-        // Assistant's response will be handled via Pusher
+        // Assistant's response and token update will be handled via Pusher
+        setTotalTokensUsed((prevTokens) => prevTokens + newMessageTokens);
       } else {
         notyf.error(response.message || 'Failed to send message.');
         setIsTyping(false);
@@ -98,6 +122,7 @@ const Chat: React.FC = () => {
       const data = await fetchWithAuth('/api/start_conversation', { method: 'POST' });
       setConversationId(data.conversation_id);
       setMessages([]);
+      setTotalTokensUsed(0); // Reset token count for new conversation
       notyf.success('Started a new conversation.');
       setIsSidebarOpen(false);
     } catch (error: any) {
@@ -116,6 +141,7 @@ const Chat: React.FC = () => {
 
       if (response.message === 'Conversation reset successfully.') {
         setMessages([]);
+        setTotalTokensUsed(0); // Reset token count
         notyf.success('Conversation has been reset.');
       } else {
         notyf.error(response.message || 'Failed to reset conversation.');
@@ -129,6 +155,8 @@ const Chat: React.FC = () => {
     try {
       const data = await fetchWithAuth(`/api/load_conversation/${convId}`, { method: 'GET' });
       setMessages(data.conversation);
+      // Calculate and update total tokens used for the loaded conversation
+      setTotalTokensUsed(data.conversation.reduce((total, msg) => total + countTokens(msg.content), 0));
       notyf.success('Conversation loaded.');
       setIsSidebarOpen(false);
     } catch (error: any) {
@@ -153,6 +181,7 @@ const Chat: React.FC = () => {
       <aside className={`conversation-sidebar ${isSidebarOpen ? 'open' : ''}`}>
         <ConversationList />
       </aside>
+
       {/* Main Chat Area */}
       <main className="chat-main">
         {/* Header */}
@@ -173,6 +202,7 @@ const Chat: React.FC = () => {
             </button>
           </nav>
         </header>
+
         {/* Conversation Area */}
         <div className="chat-container">
           <div className="chat-history" ref={chatHistoryRef}>
@@ -191,6 +221,7 @@ const Chat: React.FC = () => {
               </div>
             )}
           </div>
+
           {/* Message Input Area */}
           <div className="message-input">
             <form
@@ -212,6 +243,51 @@ const Chat: React.FC = () => {
                 <FontAwesomeIcon icon={faPaperPlane} />
               </button>
             </form>
+
+            {/* Model Parameter Controls */}
+            <div className="model-params">
+              <div>
+                <label htmlFor="temperature">Temperature ({temperature.toFixed(1)}):</label>
+                <input
+                  type="range"
+                  id="temperature"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={temperature}
+                  onChange={(e) => setTemperature(parseFloat(e.target.value))}
+                />
+              </div>
+              {/* Add similar controls for top_p and max_tokens */}
+              <div>
+                <label htmlFor="topP">Top P ({topP.toFixed(1)}):</label>
+                <input
+                  type="range"
+                  id="topP"
+                  min="0"
+                  max="1"
+                  step="0.1"
+                  value={topP}
+                  onChange={(e) => setTopP(parseFloat(e.target.value))}
+                />
+              </div>
+              <div>
+                <label htmlFor="maxTokens">Max Tokens ({maxTokens}):</label>
+                <input
+                  type="number"
+                  id="maxTokens"
+                  min="1"
+                  max="4000" // Adjust based on your model
+                  value={maxTokens}
+                  onChange={(e) => setMaxTokens(parseInt(e.target.value, 10) || 1)}
+                />
+              </div>
+            </div>
+
+            {/* Token Usage Display */}
+            <div className="token-usage">
+              Tokens Used: {totalTokensUsed} / {maxContextTokens}
+            </div>
           </div>
         </div>
       </main>
