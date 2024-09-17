@@ -2,9 +2,10 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authenticate } from '@/utils/auth';
-import clientPromise from '@/utils/mongodb';
+import { loadConversation } from '@/utils/conversation'; // Import the consolidated function
+import { errorHandler } from '@/middleware/errorHandler'; // Import errorHandler
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+const handler = async (req: NextApiRequest, res: NextApiResponse) => {
   const user = authenticate(req, res);
   if (!user) return;
 
@@ -21,22 +22,19 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const client = await clientPromise;
-    const db = client.db(process.env.MONGODB_DB_NAME);
-    const conversations = db.collection('conversations');
+    const messages = await loadConversation(conversation_id, user.id); // Use the consolidated function
 
-    const conversation = await conversations.findOne({
-      conversation_id,
-      user_id: user.id,
-    });
-
-    if (!conversation) {
-      return res.status(404).json({ message: 'Conversation not found.' });
+    if (messages) {
+      res.status(200).json({ conversation: messages });
+    } else {
+      const error = new Error('Conversation not found.');
+      (error as any).status = 404;
+      throw error; // Let errorHandler handle this
     }
-
-    res.status(200).json({ conversation: conversation.messages });
-  } catch (error: any) {
-    console.error('Error loading conversation:', error);
-    res.status(500).json({ message: 'An error occurred.', error: error.message });
+  } catch (error) {
+    // Let the errorHandler handle any errors from loadConversation
+    throw error; 
   }
-}
+};
+
+export default errorHandler(handler); // Apply errorHandler
