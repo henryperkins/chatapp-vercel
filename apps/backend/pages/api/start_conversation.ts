@@ -2,8 +2,7 @@
 
 import type { NextApiRequest, NextApiResponse } from 'next';
 import { authenticate } from '@/utils/auth';
-import clientPromise from '@/utils/mongodb';
-import { v4 as uuidv4 } from 'uuid';
+import { startConversation } from '@/utils/conversation'; // Import the consolidated function
 import { errorHandler } from '@/middleware/errorHandler';
 
 const handler = async (req: NextApiRequest, res: NextApiResponse) => {
@@ -16,20 +15,13 @@ const handler = async (req: NextApiRequest, res: NextApiResponse) => {
     return;
   }
 
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DB_NAME);
-  const conversations = db.collection('conversations');
-
-  const conversationId = uuidv4();
-  await conversations.insertOne({
-    conversation_id: conversationId,
-    user_id: user.id,
-    messages: [],
-    created_at: new Date(),
-    updated_at: new Date(),
-  });
-
-  res.status(200).json({ conversation_id: conversationId });
+  try {
+    const conversationId = await startConversation(user.id); // Use the consolidated function
+    res.status(200).json({ conversation_id: conversationId });
+  } catch (error) {
+    // Let the errorHandler handle any errors from startConversation
+    throw error; 
+  }
 };
 
-export default errorHandler(handler);
+export default errorHandler(handler); 
