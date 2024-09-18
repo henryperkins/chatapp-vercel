@@ -1,3 +1,9 @@
 node_modules
 .env
 .env.local
+generate_markdown.py
+package-lock.json
+requirements.txt
+config.json
+.github
+.docu
