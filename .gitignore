@@ -7,3 +7,6 @@ requirements.txt
 config.json
 .github
 .docu
+generate
+generate_markdown_ai.py
+generate_markdown_noai.py
